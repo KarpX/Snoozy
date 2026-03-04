@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -22,8 +24,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +52,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -58,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wem.snoozy.R
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.CycleItem
@@ -68,7 +72,8 @@ import com.wem.snoozy.presentation.utils.SwipeToDeleteAlarmItem
 import com.wem.snoozy.presentation.utils.TimePickerDialog
 import com.wem.snoozy.presentation.utils.formatDateWithRelative
 import com.wem.snoozy.presentation.viewModel.AddAlarmCommand
-import com.wem.snoozy.presentation.viewModel.AddAlarmCommand.*
+import com.wem.snoozy.presentation.viewModel.AddAlarmCommand.EditAlarm
+import com.wem.snoozy.presentation.viewModel.AddAlarmCommand.SaveAlarm
 import com.wem.snoozy.presentation.viewModel.AddAlarmState
 import com.wem.snoozy.presentation.viewModel.AddAlarmViewModel
 import com.wem.snoozy.presentation.viewModel.AddAlarmViewModelFactory
@@ -349,6 +354,7 @@ fun BottomSheetContentAdd(
 
             is AddAlarmState.Content -> {
                 AlarmTime(
+                    modifier = Modifier.padding(vertical = 24.dp),
                     selectedTime = currentState.selectedTime,
                     onTimeClick = {
                         showTimePicker = true
@@ -359,6 +365,7 @@ fun BottomSheetContentAdd(
                     addAlarmViewModel = addAlarmViewModel
                 )
                 WeekDaysRow(
+                    modifier = Modifier.padding(vertical = 24.dp),
                     viewModel = addAlarmViewModel
                 )
                 AlarmDate(
@@ -481,6 +488,7 @@ fun BottomSheetContentEdit(
 
             is AddAlarmState.Content -> {
                 AlarmTime(
+                    modifier = Modifier.padding(vertical = 24.dp),
                     selectedTime = currentState.selectedTime,
                     onTimeClick = {
                         showTimePicker = true
@@ -491,6 +499,7 @@ fun BottomSheetContentEdit(
                     addAlarmViewModel = addAlarmViewModel
                 )
                 WeekDaysRow(
+                    modifier = Modifier.padding(vertical = 24.dp),
                     viewModel = addAlarmViewModel
                 )
                 AlarmDate(
@@ -540,17 +549,20 @@ fun BottomSheetCancelAndSave(
         Button(
             onClick = { onCancelClick() },
             colors = ButtonDefaults.buttonColors().copy(
-                containerColor = MaterialTheme.colorScheme.onSurface
-            )
+                containerColor = Color(0xffEC625F)
+            ),
+            modifier = Modifier.weight(2f)
         ) {
             Text(
-                "Cancel",
+                stringResource(R.string.cancel),
                 fontSize = 20.sp,
                 fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
-                color = MaterialTheme.colorScheme.tertiary
+                    color = Color.White
             )
         }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = {
@@ -559,10 +571,11 @@ fun BottomSheetCancelAndSave(
             },
             colors = ButtonDefaults.buttonColors().copy(
                 containerColor = MaterialTheme.colorScheme.onBackground
-            )
+            ),
+            modifier = Modifier.weight(2f)
         ) {
             Text(
-                "Save",
+                "Добавить",
                 fontSize = 20.sp,
                 fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
@@ -578,41 +591,38 @@ fun AlarmDate(
     selectedDate: LocalDate,
     onApplyDateClick: () -> Unit
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 35.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(bottom = 32.dp),
     ) {
-        Column {
-            Text(
-                text = "Alarm rings",
-                fontSize = 20.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight(200),
-                color = MaterialTheme.colorScheme.tertiary
+        Text(
+            text = "Будильник сработает:",
+            fontSize = 20.sp,
+            fontFamily = myTypeFamily,
+            fontWeight = FontWeight(900),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+
+        Button(
+            { onApplyDateClick() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors().copy(
+                containerColor = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                text = formatDateWithRelative(selectedDate),
-                fontSize = 20.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight(900),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-        }
-        Button({ onApplyDateClick() }) {
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Default.AccessTime,
-                    ""
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Schedule",
+                    formatDateWithRelative(selectedDate),
                     fontSize = 20.sp,
                     fontFamily = myTypeFamily,
-                    fontWeight = FontWeight(200),
+                    fontWeight = FontWeight(900),
                     color = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -630,7 +640,6 @@ fun AlarmTime(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 35.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -693,10 +702,10 @@ fun WeekDaysRow(
 
     val daysState = viewModel.daysList.collectAsState()
 
+
     LazyRow(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 35.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         items(
@@ -720,7 +729,7 @@ fun WeekDaysRow(
             ) {
                 Text(
                     it.name,
-                    fontSize = 25.sp,
+                    fontSize = 20.sp,
                     fontFamily = myTypeFamily,
                     fontWeight = FontWeight(900),
                     color = MaterialTheme.colorScheme.tertiary,

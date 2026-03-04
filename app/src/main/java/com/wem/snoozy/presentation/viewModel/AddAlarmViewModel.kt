@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,19 +41,8 @@ class AddAlarmViewModel(
     private val addNewAlarmUseCase = AddNewAlarmUseCase(repository)
     private val editAlarmUseCase = EditAlarmUseCase(repository)
 
-    private val preferences = combine(
-        userPreferencesManager.cycleLengthFlow,
-        userPreferencesManager.sleepStartTimeFlow
-    ) { cycleLength, sleepStartTime ->
-        Preferences(
-            cycleLength = cycleLength ?: "90",
-            sleepStartTime = sleepStartTime ?: "0"
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = Preferences("90", "0")
-    )
+    private val cycleLength = MutableStateFlow("-1")
+    private val sleepStartTime = MutableStateFlow("-1")
 
     // Add alarm screen state
     private val _state = MutableStateFlow<AddAlarmState>(AddAlarmState.Loading)
@@ -60,13 +51,13 @@ class AddAlarmViewModel(
     private val _cyclesList = MutableStateFlow<List<CycleItem>>(emptyList())
 
     private val initDaysList = listOf(
-        DayItem(0, DaysName.SUNDAY.getDisplayName(), false),
         DayItem(1, DaysName.MONDAY.getDisplayName(), false),
         DayItem(2, DaysName.TUESDAY.getDisplayName(), false),
         DayItem(3, DaysName.WEDNESDAY.getDisplayName(), false),
         DayItem(4, DaysName.THURSDAY.getDisplayName(), false),
         DayItem(5, DaysName.FRIDAY.getDisplayName(), false),
         DayItem(6, DaysName.SATURDAY.getDisplayName(), false),
+        DayItem(7, DaysName.SUNDAY.getDisplayName(), false),
     )
     private val _daysList = MutableStateFlow(initDaysList)
     val daysList = _daysList.asStateFlow()
@@ -74,44 +65,38 @@ class AddAlarmViewModel(
     val selectedCycleId = MutableStateFlow(-1)
 
     init {
-        viewModelScope.launch {
-            preferences.collect { prefs ->
-                val currentState = _state.value
-                if (currentState is AddAlarmState.Content) {
-                    applyCyclesList(currentState.selectedTime)
-                } else {
-                    initializeState()
-                }
-            }
-        }
+        initializeState()
     }
 
     private fun initializeState() {
-        val prefs = preferences.value
-        applyCyclesList(LocalTime.now())
-        _state.value = AddAlarmState.Content(
-            selectedTime = LocalTime.now(),
-            cyclesList = _cyclesList.value,
-            daysList = initDaysList,
-            selectedDate = LocalDate.now()
-        )
+        viewModelScope.launch {
+            cycleLength.value = userPreferencesManager.cycleLengthFlow.first()
+            sleepStartTime.value = userPreferencesManager.sleepStartTimeFlow.first()
+            applyCyclesList(LocalTime.now())
+            _state.value = AddAlarmState.Content(
+                selectedTime = LocalTime.now(),
+                cyclesList = _cyclesList.value,
+                daysList = initDaysList,
+                selectedDate = LocalDate.now()
+            )
+        }
     }
 
     fun applyCyclesList(selectedTime: LocalTime) {
-        val prefs = preferences.value
+        Log.d("AddAlarm", "apply work ")
         var currentTime = selectedTime
         val newItems = mutableListOf<CycleItem>()
 
         for (i in 1..7) {
             val minusMinutes = currentTime
-                .minusMinutes(prefs.cycleLength.toLong())
-                .minusMinutes(prefs.sleepStartTime.toLong())
+                .minusMinutes(cycleLength.value.toLong())
+                .minusMinutes(sleepStartTime.value.toLong())
 
             val hours = minusMinutes.hour.toString()
             val minutes = minusMinutes.minute.toString().padStart(2, '0')
             val cycleItem = CycleItem(i, "$hours:$minutes", i.toString(), checked = false)
             newItems.add(cycleItem)
-            currentTime = currentTime.minusMinutes(prefs.cycleLength.toLong())
+            currentTime = currentTime.minusMinutes(cycleLength.value.toLong())
         }
 
         if (_cyclesList.value.isNotEmpty() && newItems.toSet() == _cyclesList.value.map {
@@ -121,14 +106,6 @@ class AddAlarmViewModel(
         }
 
         _cyclesList.value = newItems.sortedByDescending { it.id }.toMutableList()
-
-        _state.update { state ->
-            if (state is AddAlarmState.Content) {
-                state.copy(cyclesList = _cyclesList.value)
-            } else {
-                state
-            }
-        }
     }
 
     fun processCommand(command: AddAlarmCommand) {

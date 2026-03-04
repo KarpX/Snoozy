@@ -62,13 +62,24 @@ fun CycleItemCard(
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                cycleItem.cycleCount + " cycles",
+                formatCycleName(cycleItem.cycleCount),
                 fontSize = 15.sp,
                 fontFamily = myTypeFamily,
                 fontWeight = FontWeight(400),
                 color = MaterialTheme.colorScheme.tertiary,
             )
         }
+    }
+}
+
+
+fun formatCycleName(cycleCount: String): String {
+    val initString = cycleCount
+    return when (cycleCount) {
+        "1" -> "$initString цикл"
+        "2", "3", "4" -> "$initString цикла"
+        "5", "6", "7", "8", "9" -> "$initString циклов"
+        else -> "Error"
     }
 }
 

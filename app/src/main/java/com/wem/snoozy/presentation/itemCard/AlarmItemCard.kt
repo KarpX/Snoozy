@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -88,7 +89,7 @@ fun AlarmItemCard(
         shape = CircleShape.copy(CornerSize(20))
     ) {
 
-        val textTimeToBed =  if (alarmItem.timeToBed.isNotEmpty()) "Time to bed: " + alarmItem.timeToBed else ""
+        val textTimeToBed =  if (alarmItem.timeToBed.isNotEmpty()) stringResource(R.string.time_to_bed) + alarmItem.timeToBed else ""
 
         Column(
             modifier = modifier

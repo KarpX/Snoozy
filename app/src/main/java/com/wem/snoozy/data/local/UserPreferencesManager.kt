@@ -22,12 +22,12 @@ class UserPreferencesManager(
         val DARK_THEME_KEY = booleanPreferencesKey("dark_theme")
     }
 
-    val sleepStartTimeFlow: Flow<String?> = context.dataStore.data
+    val sleepStartTimeFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
             preferences[SLEEP_START_TIME] ?: "0"
         }
 
-    val cycleLengthFlow: Flow<String?> = context.dataStore.data
+    val cycleLengthFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
             preferences[CYCLE_LENGTH] ?: "90"
         }

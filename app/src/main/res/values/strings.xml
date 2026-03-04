@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Snoozy</string>
+    <string name="time_to_bed">"Лечь спать: "</string>
+    <string name="cancel">Отмена</string>
+    <string name="save">Сохранить</string>
+    <string name="settings">Настройки</string>
+    <string name="app_theme">ТЕМА ПРИЛОЖЕНИЯ</string>
+    <string name="alarm_settings">НАСТРОЙКИ БУДИЛЬНИКА</string>
+    <string name="dark_mode">Ночная тема</string>
+    <string name="cycle_length">Длина цикла</string>
+    <string name="minutes">мин.</string>
+    <string name="sleep_start_time">Время засыпания</string>
 </resources>

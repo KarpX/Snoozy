@@ -46,32 +46,27 @@ import com.wem.snoozy.presentation.itemCard.myTypeFamily
  */
 sealed class MyNavItem(
     val screen: Screen,
-    val icon: ImageVector,
-    val title: String
+    val icon: ImageVector
 ) {
 
     data object Home : MyNavItem(
         screen = Screen.Home,
-        icon = Icons.Outlined.Alarm,
-        title = "Alarms"
+        icon = Icons.Outlined.Alarm
     )
 
     data object Groups : MyNavItem(
         screen = Screen.Groups,
-        icon = Icons.Outlined.Group,
-        title = "Groups"
+        icon = Icons.Outlined.Group
     )
 
     data object Profile : MyNavItem(
         screen = Screen.Profile,
-        icon = Icons.Outlined.AccountCircle,
-        title = "Profile"
+        icon = Icons.Outlined.AccountCircle
     )
 
     data object Settings : MyNavItem(
         screen = Screen.Settings,
-        icon = Icons.Outlined.Settings,
-        title = "Settings"
+        icon = Icons.Outlined.Settings
     )
 }
 
@@ -131,17 +126,9 @@ fun BottomBarTabs(
                 ) {
                     Icon(
                         imageVector = tab.icon,
-                        contentDescription = "tab ${tab.title}",
+                        contentDescription = "tab",
                         tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(32.dp)
-                    )
-                    Text(
-                        text = tab.title,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontSize = 10.sp,
-                        fontFamily = myTypeFamily,
-                        fontWeight = FontWeight(900),
-                        lineHeight = 2.sp
                     )
                 }
             }
