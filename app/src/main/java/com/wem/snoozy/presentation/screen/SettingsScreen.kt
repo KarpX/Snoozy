@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wem.snoozy.R
 import com.wem.snoozy.data.local.UserPreferencesManager
@@ -55,10 +56,7 @@ import com.wem.snoozy.presentation.viewModel.SettingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    context: Context = LocalContext.current.applicationContext,
-    viewModel: SettingsViewModel = viewModel {
-        SettingsViewModel(UserPreferencesManager(context))
-    }
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
 
     // TODO: ПРИ ВЫХОДЕ ИЗ ПРИЛОЖЕНИЯ В НАСТРОЙКАХ С ПУСТЫМИ ПАРАМЕТРАМИ ОНИ ОСТАНУТСЯ ПУСТЫМИ ПРИ СЛЕД. ЗАХОДЕ

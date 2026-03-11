@@ -1,8 +1,9 @@
 package com.wem.snoozy.domain.usecase
 
 import com.wem.snoozy.domain.repository.AlarmRepository
+import javax.inject.Inject
 
-class DeleteAlarmUseCase(
+class DeleteAlarmUseCase @Inject constructor(
     private val repository: AlarmRepository
 ) {
 

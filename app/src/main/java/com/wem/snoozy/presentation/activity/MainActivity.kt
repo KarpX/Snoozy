@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.wem.snoozy.data.local.UserPreferencesManager
@@ -29,7 +30,9 @@ import com.wem.snoozy.presentation.navigation.AppNavGraph
 import com.wem.snoozy.presentation.navigation.BottomBarTabs
 import com.wem.snoozy.presentation.viewModel.SettingsViewModel
 import com.wem.snoozy.ui.theme.SnoozyTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private lateinit var userPreferencesManager: UserPreferencesManager
@@ -42,11 +45,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            val context = LocalContext.current.applicationContext
-
-            val settingsViewModel: SettingsViewModel = viewModel {
-                SettingsViewModel(UserPreferencesManager(context))
-            }
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
 
             val themeState by settingsViewModel.themeState.collectAsState()
 

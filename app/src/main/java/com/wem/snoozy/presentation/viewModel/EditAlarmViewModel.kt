@@ -1,6 +1,7 @@
 package com.wem.snoozy.presentation.viewModel
 
 import android.util.Log
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.data.repository.AlarmRepositoryImpl
@@ -10,6 +11,10 @@ import com.wem.snoozy.domain.entity.DayItem
 import com.wem.snoozy.domain.entity.DaysName
 import com.wem.snoozy.domain.usecase.EditAlarmUseCase
 import com.wem.snoozy.presentation.utils.formatStringToDate
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -18,13 +23,15 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
-class EditAlarmViewModel(
-    private val alarmItem: AlarmItem,
-    private val userPreferencesManager: UserPreferencesManager
-) : AddAlarmViewModel(userPreferencesManager) {
+@HiltViewModel(
+    assistedFactory = EditAlarmViewModel.Factory::class
+)
+class EditAlarmViewModel @AssistedInject constructor(
+    private val editAlarmUseCase: EditAlarmUseCase,
+    private val userPreferencesManager: UserPreferencesManager,
+    @Assisted("alarmItem") private val alarmItem: AlarmItem,
+) : ViewModel() {
 
-    private val repository = AlarmRepositoryImpl()
-    private val editAlarmUseCase = EditAlarmUseCase(repository)
 
     private val cycleLength = MutableStateFlow("-1")
     private val sleepStartTime = MutableStateFlow("-1")
@@ -191,6 +198,15 @@ class EditAlarmViewModel(
             }
         }
     }
+
+    @AssistedFactory
+    interface Factory {
+
+        fun create(
+            @Assisted("alarmItem") alarmItem: AlarmItem
+        ): EditAlarmViewModel
+    }
+
 }
 
 sealed interface EditAlarmCommand {

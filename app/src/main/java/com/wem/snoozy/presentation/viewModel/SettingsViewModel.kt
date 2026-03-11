@@ -3,6 +3,9 @@ package com.wem.snoozy.presentation.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wem.snoozy.data.local.UserPreferencesManager
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -10,13 +13,15 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  *  ViewModel for settings screen
  *
  *  @param userPreferencesManager manager for working with local storage
  */
-class SettingsViewModel(
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     private val userPreferencesManager: UserPreferencesManager
 ) : ViewModel() {
 

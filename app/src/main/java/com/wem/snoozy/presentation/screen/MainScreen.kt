@@ -1,10 +1,7 @@
 package com.wem.snoozy.presentation.screen
 
+import android.content.Context
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -50,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,9 +62,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModelProvider
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import com.wem.snoozy.R
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.domain.entity.AlarmItem
@@ -81,13 +79,15 @@ import com.wem.snoozy.presentation.viewModel.AddAlarmCommand
 import com.wem.snoozy.presentation.viewModel.AddAlarmCommand.SaveAlarm
 import com.wem.snoozy.presentation.viewModel.AddAlarmState
 import com.wem.snoozy.presentation.viewModel.AddAlarmViewModel
-import com.wem.snoozy.presentation.viewModel.AddAlarmViewModelFactory
-import com.wem.snoozy.presentation.viewModel.EditAlarmCommand
-import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.*
+import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.EditAlarm
+import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.SelectCycle
+import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.SelectDate
+import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.SelectDay
+import com.wem.snoozy.presentation.viewModel.EditAlarmCommand.SelectTime
 import com.wem.snoozy.presentation.viewModel.EditAlarmState
 import com.wem.snoozy.presentation.viewModel.EditAlarmViewModel
-import com.wem.snoozy.presentation.viewModel.EditAlarmViewModelFactory
-import com.wem.snoozy.presentation.viewModel.MainCommand
+import com.wem.snoozy.presentation.viewModel.MainCommand.DeleteAlarm
+import com.wem.snoozy.presentation.viewModel.MainCommand.SwitchAlarm
 import com.wem.snoozy.presentation.viewModel.MainState
 import com.wem.snoozy.presentation.viewModel.MainViewModel
 import kotlinx.coroutines.launch
@@ -97,7 +97,7 @@ import java.time.LocalTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    mainViewModel: MainViewModel = viewModel(),
+    mainViewModel: MainViewModel = hiltViewModel(),
 ) {
 
     val sheetState = rememberModalBottomSheetState(
@@ -120,22 +120,29 @@ fun MainScreen(
     ) {
         when (currentState) {
             MainState.Initial -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+//                Box(
+//                    modifier = Modifier.fillMaxSize(),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Text(
+//                        "Загрузка...",
+//                        color = MaterialTheme.colorScheme.tertiary,
+//                        fontSize = 20.sp,
+//                        fontFamily = myTypeFamily,
+//                        fontWeight = FontWeight(900),
+//                        lineHeight = 2.sp
+//                    )
+//                }
             }
 
             is MainState.Content -> {
                 AlarmsList(
                     alarms = currentState.alarmList,
                     onDeleteSwipe = { alarmId ->
-                        mainViewModel.processCommand(MainCommand.DeleteAlarm(alarmId))
+                        mainViewModel.processCommand(DeleteAlarm(alarmId))
                     },
                     onToggleAlarm = { alarmItem ->
-                        mainViewModel.processCommand(MainCommand.SwitchAlarm(alarmItem))
+                        mainViewModel.processCommand(SwitchAlarm(alarmItem))
                     },
                     onEditClick = { alarmItem ->
                         editAlarm.value = alarmItem
@@ -154,6 +161,15 @@ fun MainScreen(
                     AddButton {
                         showBottomSheetAdd = true
                     }
+                }
+            }
+
+            MainState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -307,30 +323,14 @@ fun AlarmsList(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetContentAdd(
-    onCancelClick: () -> Unit
+    onCancelClick: () -> Unit,
 ) {
 
-    val context = LocalContext.current.applicationContext
+    val sheetId = rememberSaveable { System.currentTimeMillis().toString()}
 
-    val viewModelStore = remember { ViewModelStore() }
-
-    val factory = remember(UserPreferencesManager(context)) {
-        AddAlarmViewModelFactory(
-            UserPreferencesManager(context)
-        )
-    }
-
-    val addAlarmViewModel: AddAlarmViewModel = remember(viewModelStore) {
-        ViewModelProvider(viewModelStore, factory)[AddAlarmViewModel::class.java]
-    }
-
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModelStore.clear()
-            Log.d("MainViewModel", "finished")
-        }
-    }
+    val addAlarmViewModel: AddAlarmViewModel = hiltViewModel(
+        key = sheetId,
+    )
 
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -440,29 +440,14 @@ fun BottomSheetContentEdit(
     onCancelClick: () -> Unit
 ) {
 
-    val context = LocalContext.current.applicationContext
+    val sheetId = rememberSaveable { System.currentTimeMillis().toString()}
 
-    val viewModelStore = remember { ViewModelStore() }
-
-    val factory = remember(Unit) {
-        EditAlarmViewModelFactory(
-            alarmItem,
-            UserPreferencesManager(context)
-        )
-    }
-
-    val editAlarmViewModel: EditAlarmViewModel = remember(viewModelStore) {
-        ViewModelProvider(viewModelStore, factory)[EditAlarmViewModel::class.java]
-    }
-
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModelStore.clear()
-            Log.d("EditAlarmViewModel", "finished")
+    val editAlarmViewModel: EditAlarmViewModel = hiltViewModel(
+        key = sheetId,
+        creationCallback = { factory: EditAlarmViewModel.Factory ->
+            factory.create(alarmItem)
         }
-    }
-
+    )
 
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -588,7 +573,7 @@ fun BottomSheetCancelAndSave(
                 fontSize = 16.sp,
                 fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
-                    color = Color.White
+                color = Color.White
             )
         }
 
@@ -731,7 +716,8 @@ fun WeekDaysRow(
     editViewModel: EditAlarmViewModel? = null
 ) {
 
-    val currentState = addViewModel?.daysList?.collectAsState() ?: editViewModel!!.editDaysList.collectAsState()
+    val currentState =
+        addViewModel?.daysList?.collectAsState() ?: editViewModel!!.editDaysList.collectAsState()
 
     LazyRow(
         modifier = modifier

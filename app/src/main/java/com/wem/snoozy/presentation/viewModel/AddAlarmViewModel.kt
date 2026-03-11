@@ -12,6 +12,10 @@ import com.wem.snoozy.domain.entity.DaysName
 import com.wem.snoozy.domain.usecase.AddNewAlarmUseCase
 import com.wem.snoozy.domain.usecase.EditAlarmUseCase
 import com.wem.snoozy.presentation.utils.formatStringToDate
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,20 +27,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import javax.inject.Inject
 
 /**
  * ViewModel for add alarm bottom sheet
  *
  * @param userPreferencesManager manager for working with local storage
  */
-open class AddAlarmViewModel(
+@HiltViewModel
+open class AddAlarmViewModel @Inject constructor(
+    private val addNewAlarmUseCase: AddNewAlarmUseCase,
     private val userPreferencesManager: UserPreferencesManager
 ) : ViewModel() {
 
     // TODO: ДОБАВИТЬ СЕРИАЛИЗАЦИЮ ДНЕЙ ПРОЗВОНА БУДИЛЬНИКА ЧЕРЕЗ JSON
-
-    private val repository = AlarmRepositoryImpl()
-    private val addNewAlarmUseCase = AddNewAlarmUseCase(repository)
 
     private val cycleLength = MutableStateFlow("-1")
     private val sleepStartTime = MutableStateFlow("-1")
