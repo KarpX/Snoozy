@@ -12,6 +12,9 @@ interface Dao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addAlarm(alarmItemModel: AlarmItemModel): Long
 
+    @Query("SELECT * FROM alarms WHERE id = :alarmId")
+    suspend fun getAlarmById(alarmId: Int): AlarmItemModel?
+
     @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
     fun getAlarms(): Flow<List<AlarmItemModel>>
 

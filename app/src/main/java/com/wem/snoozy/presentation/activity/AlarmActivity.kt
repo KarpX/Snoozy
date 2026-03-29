@@ -15,21 +15,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wem.snoozy.data.alarm.AlarmService
+import com.wem.snoozy.data.receiver.AlarmReceiver
 import com.wem.snoozy.ui.theme.SnoozyTheme
 
 class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, -1)
+
         turnScreenOnAndKeyguardOff()
 
         setContent {
             SnoozyTheme {
                 AlarmScreen(
                     onDismiss = {
-                        val serviceIntent = Intent(this, AlarmService::class.java)
-                        stopService(serviceIntent)
+                        // Отправляем бродкаст для остановки сервиса и обновления даты в БД
+                        val dismissIntent = Intent(this, AlarmReceiver::class.java).apply {
+                            action = AlarmReceiver.ACTION_DISMISS_ALARM
+                            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
+                        }
+                        sendBroadcast(dismissIntent)
                         finish()
                     }
                 )

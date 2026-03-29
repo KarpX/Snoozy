@@ -2,9 +2,14 @@ package com.wem.snoozy.presentation.activity
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -14,11 +19,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -50,6 +55,8 @@ class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeState by settingsViewModel.themeState.collectAsState()
 
+            var showBatteryDialog by remember { mutableStateOf(false) }
+
             // Запрос разрешения на уведомления для Android 13+
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
@@ -65,6 +72,36 @@ class MainActivity : ComponentActivity() {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
+                
+                // Проверка оптимизации батареи
+                val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                    showBatteryDialog = true
+                }
+            }
+
+            if (showBatteryDialog) {
+                AlertDialog(
+                    onDismissRequest = { showBatteryDialog = false },
+                    title = { Text("Внимание") },
+                    text = { Text("Для корректной работы будильника в фоновом режиме необходимо отключить оптимизацию заряда батареи для этого приложения.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                            showBatteryDialog = false
+                        }) {
+                            Text("Настроить")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showBatteryDialog = false }) {
+                            Text("Отмена")
+                        }
+                    }
+                )
             }
 
             SnoozyTheme(darkTheme = themeState) {

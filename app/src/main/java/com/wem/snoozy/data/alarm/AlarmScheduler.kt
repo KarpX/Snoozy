@@ -66,7 +66,6 @@ class AlarmScheduler @Inject constructor(
 
             val triggerAt = scheduleTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            // Используем setAlarmClock для надежности при выключенном экране и закрытом приложении
             val showIntent = Intent(context, MainActivity::class.java)
             val showPendingIntent = PendingIntent.getActivity(
                 context, alarmItem.id, showIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -111,7 +110,6 @@ class AlarmScheduler @Inject constructor(
 
             val triggerAt = scheduleTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            // Для уведомления "пора спать" можно использовать обычный setExact
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
                     alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
@@ -127,17 +125,20 @@ class AlarmScheduler @Inject constructor(
     }
 
     fun cancelAlarm(alarmId: Int) {
-        val intent = Intent(context, AlarmReceiver::class.java)
+        // Чтобы иконка исчезла, нужно создать Intent с ТЕМ ЖЕ ACTION и ТЕМ ЖЕ REQUEST_CODE
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_ALARM
+        }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             alarmId,
             intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
-        }
+        
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+        Log.d("AlarmScheduler", "Canceled alarm $alarmId and removed from system")
     }
 
     fun cancelBedtimeNotification(alarmId: Int) {
@@ -146,12 +147,10 @@ class AlarmScheduler @Inject constructor(
             context,
             alarmId + BEDTIME_OFFSET,
             intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
-        }
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
     }
 
     private fun getNextOccurrence(startDateTime: LocalDateTime, repeatDays: String): LocalDateTime {
