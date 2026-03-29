@@ -1,6 +1,7 @@
 package com.wem.snoozy.di
 
 import android.content.Context
+import com.wem.snoozy.data.alarm.AlarmScheduler
 import com.wem.snoozy.data.local.AlarmDatabase
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.local.UserPreferencesManager
@@ -44,6 +45,14 @@ interface DataModule {
             @ApplicationContext context: Context
         ): UserPreferencesManager {
             return UserPreferencesManager(context)
+        }
+
+        @Provides
+        @Singleton
+        fun provideAlarmScheduler(
+            @ApplicationContext context: Context
+        ): AlarmScheduler {
+            return AlarmScheduler(context)
         }
     }
 }

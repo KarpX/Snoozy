@@ -23,6 +23,12 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
+
+/**
+ * ViewModel for edit alarms screen
+ *
+ * @param alarmItem editing alarm item
+ */
 @HiltViewModel(
     assistedFactory = EditAlarmViewModel.Factory::class
 )
@@ -32,9 +38,8 @@ class EditAlarmViewModel @AssistedInject constructor(
     @Assisted("alarmItem") private val alarmItem: AlarmItem,
 ) : ViewModel() {
 
-
-    private val cycleLength = MutableStateFlow("-1")
-    private val sleepStartTime = MutableStateFlow("-1")
+    private val cycleLength = MutableStateFlow(INIT_CYCLE_LENGTH)
+    private val sleepStartTime = MutableStateFlow(INIT_SLEEP_START_TIME)
 
     // Edit alarm screen state
     private val _state = MutableStateFlow<EditAlarmState>(EditAlarmState.Initial)
@@ -54,7 +59,7 @@ class EditAlarmViewModel @AssistedInject constructor(
     private val _daysList = MutableStateFlow(initDaysList)
     val editDaysList = _daysList.asStateFlow()
 
-    val editSelectedCycleId = MutableStateFlow(-1)
+    val editSelectedCycleId = MutableStateFlow(INIT_SELECTED_ITEM_ID)
 
     init {
         initializeState()
@@ -207,6 +212,13 @@ class EditAlarmViewModel @AssistedInject constructor(
         ): EditAlarmViewModel
     }
 
+    companion object {
+
+        const val INIT_CYCLE_LENGTH = "-1"
+        const val INIT_SLEEP_START_TIME = "-1"
+
+        const val INIT_SELECTED_ITEM_ID = -1
+    }
 }
 
 sealed interface EditAlarmCommand {

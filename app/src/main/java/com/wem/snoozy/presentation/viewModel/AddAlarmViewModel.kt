@@ -42,8 +42,8 @@ open class AddAlarmViewModel @Inject constructor(
 
     // TODO: ДОБАВИТЬ СЕРИАЛИЗАЦИЮ ДНЕЙ ПРОЗВОНА БУДИЛЬНИКА ЧЕРЕЗ JSON
 
-    private val cycleLength = MutableStateFlow("-1")
-    private val sleepStartTime = MutableStateFlow("-1")
+    private val cycleLength = MutableStateFlow(INIT_CYCLE_LENGTH)
+    private val sleepStartTime = MutableStateFlow(INIT_SLEEP_START_TIME)
 
     // Add alarm screen state
     private val _state = MutableStateFlow<AddAlarmState>(AddAlarmState.Loading)
@@ -63,7 +63,7 @@ open class AddAlarmViewModel @Inject constructor(
     private val _daysList = MutableStateFlow(initDaysList)
     val daysList = _daysList.asStateFlow()
 
-    val selectedCycleId = MutableStateFlow(-1)
+    val selectedCycleId = MutableStateFlow(INIT_SELECTED_ITEM_ID)
 
     init {
         initializeState()
@@ -197,13 +197,15 @@ open class AddAlarmViewModel @Inject constructor(
                 .thenByDescending { it.id }
         ).toMutableList()
     }
+
+    companion object {
+
+        const val INIT_CYCLE_LENGTH = "-1"
+        const val INIT_SLEEP_START_TIME = "-1"
+
+        const val INIT_SELECTED_ITEM_ID = -1
+    }
 }
-
-data class Preferences(
-    val cycleLength: String,
-    val sleepStartTime: String
-)
-
 
 sealed interface AddAlarmCommand {
 

@@ -1,7 +1,5 @@
 package com.wem.snoozy.presentation.screen
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,7 +37,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -55,7 +52,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -63,10 +59,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import com.wem.snoozy.R
-import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.CycleItem
 import com.wem.snoozy.presentation.itemCard.CycleItemCard
@@ -326,7 +319,7 @@ fun BottomSheetContentAdd(
     onCancelClick: () -> Unit,
 ) {
 
-    val sheetId = rememberSaveable { System.currentTimeMillis().toString()}
+    val sheetId = rememberSaveable { System.currentTimeMillis().toString() }
 
     val addAlarmViewModel: AddAlarmViewModel = hiltViewModel(
         key = sheetId,
@@ -440,7 +433,7 @@ fun BottomSheetContentEdit(
     onCancelClick: () -> Unit
 ) {
 
-    val sheetId = rememberSaveable { System.currentTimeMillis().toString()}
+    val sheetId = rememberSaveable { System.currentTimeMillis().toString() }
 
     val editAlarmViewModel: EditAlarmViewModel = hiltViewModel(
         key = sheetId,

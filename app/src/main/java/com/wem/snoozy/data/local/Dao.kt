@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface Dao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addAlarm(alarmItemModel: AlarmItemModel)
+    suspend fun addAlarm(alarmItemModel: AlarmItemModel): Long
 
     @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
     fun getAlarms(): Flow<List<AlarmItemModel>>
