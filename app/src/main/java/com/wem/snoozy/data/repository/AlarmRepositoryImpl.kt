@@ -19,15 +19,16 @@ class AlarmRepositoryImpl @Inject constructor(
         val id = dao.addAlarm(alarmItem.toAlarmItemModel()).toInt()
         val savedAlarm = alarmItem.copy(id = id)
         if (savedAlarm.checked) {
-            alarmScheduler.scheduleBedtimeNotification(savedAlarm)
+            alarmScheduler.schedule(savedAlarm)
         }
     }
 
     override suspend fun editAlarm(alarmItem: AlarmItem) {
         dao.addAlarm(alarmItem.toAlarmItemModel())
         if (alarmItem.checked) {
-            alarmScheduler.scheduleBedtimeNotification(alarmItem)
+            alarmScheduler.schedule(alarmItem)
         } else {
+            alarmScheduler.cancelAlarm(alarmItem.id)
             alarmScheduler.cancelBedtimeNotification(alarmItem.id)
         }
     }
@@ -41,14 +42,16 @@ class AlarmRepositoryImpl @Inject constructor(
         dao.updateCheckedStatus(alarmItem.id, newCheckedState)
         val updatedAlarm = alarmItem.copy(checked = newCheckedState)
         if (newCheckedState) {
-            alarmScheduler.scheduleBedtimeNotification(updatedAlarm)
+            alarmScheduler.schedule(updatedAlarm)
         } else {
+            alarmScheduler.cancelAlarm(updatedAlarm.id)
             alarmScheduler.cancelBedtimeNotification(updatedAlarm.id)
         }
     }
 
     override suspend fun deleteAlarm(alarmId: Int) {
         dao.deleteAlarm(alarmId)
+        alarmScheduler.cancelAlarm(alarmId)
         alarmScheduler.cancelBedtimeNotification(alarmId)
     }
 }

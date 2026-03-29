@@ -410,7 +410,7 @@ fun BottomSheetContentAdd(
                                         .padStart(2, '0'),
                                     timeToBed = if (selectedCycleId.value != -1) currentState.cyclesList.first().time else "",
                                     checked = true,
-                                    repeatDays = ""
+                                    repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() }
                                 )
                             )
                         )
