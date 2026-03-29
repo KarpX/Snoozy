@@ -41,8 +41,9 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
         val action = intent.action
         val type = intent.getStringExtra(EXTRA_TYPE)
+        val ringHours = intent.getStringExtra("RING_HOURS")
         
-        Log.d("AlarmReceiver", "onReceive: action=$action, alarmId=$alarmId, type=$type")
+        Log.d("AlarmReceiver", "onReceive: action=$action, alarmId=$alarmId, type=$type, ringHours=$ringHours")
 
         if (action == ACTION_DISMISS_ALARM) {
             val serviceIntent = Intent(context, AlarmService::class.java)
@@ -65,11 +66,11 @@ class AlarmReceiver : BroadcastReceiver() {
                 context.startService(serviceIntent)
             }
         } else if (action == ACTION_BEDTIME || type == TYPE_BEDTIME) {
-            showBedtimeNotification(context)
+            showBedtimeNotification(context, ringHours)
         }
     }
 
-    private fun showBedtimeNotification(context: Context) {
+    private fun showBedtimeNotification(context: Context, ringHours: String?) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "bedtime_channel"
 
@@ -86,12 +87,18 @@ class AlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
+        val contentText = if (ringHours != null) {
+            "Чтобы выспаться к $ringHours, вам пора ложиться в постель."
+        } else {
+            "Чтобы выспаться, вам пора ложиться в постель."
+        }
+
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("Пора спать!")
-            .setContentText("Чтобы выспаться, вам пора ложиться в постель.")
+            .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setSound(defaultSoundUri)

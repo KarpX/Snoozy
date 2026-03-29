@@ -99,6 +99,7 @@ class AlarmScheduler @Inject constructor(
             val intent = Intent(context, AlarmReceiver::class.java).apply {
                 putExtra(AlarmReceiver.EXTRA_TYPE, AlarmReceiver.TYPE_BEDTIME)
                 putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmItem.id)
+                putExtra("RING_HOURS", alarmItem.ringHours) // Передаем время просыпания
             }
 
             val pendingIntent = PendingIntent.getBroadcast(
@@ -125,7 +126,6 @@ class AlarmScheduler @Inject constructor(
     }
 
     fun cancelAlarm(alarmId: Int) {
-        // Чтобы иконка исчезла, нужно создать Intent с ТЕМ ЖЕ ACTION и ТЕМ ЖЕ REQUEST_CODE
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_ALARM
         }
