@@ -10,29 +10,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.Text
-import coil3.compose.AsyncImage
-import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.ui.theme.SnoozyTheme
 
 @Composable
-fun GroupsScreen() {
+fun GroupsScreen(
+    onAddGroupClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -46,7 +38,7 @@ fun GroupsScreen() {
                     .padding(vertical = 16.dp, horizontal = 32.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
-                AddGroupButton()
+                AddGroupButton(onAddClick = onAddGroupClick)
             }
         }
     }
@@ -55,6 +47,7 @@ fun GroupsScreen() {
 @Composable
 fun AddGroupButton(
     modifier: Modifier = Modifier,
+    onAddClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -63,7 +56,7 @@ fun AddGroupButton(
             .clip(RoundedCornerShape(50))
             .background(MaterialTheme.colorScheme.onTertiary)
             .clickable {
-//                onAddClick()
+                onAddClick()
             },
         contentAlignment = Alignment.Center
     ) {
@@ -81,7 +74,7 @@ fun AddGroupButton(
     showBackground = true
 )
 fun GroupScreenPreview() {
-    SnoozyTheme() {
+    SnoozyTheme {
         GroupsScreen()
     }
 }

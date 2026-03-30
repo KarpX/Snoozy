@@ -1,8 +1,5 @@
 package com.wem.snoozy.presentation.navigation
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,46 +16,42 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.wem.snoozy.presentation.itemCard.myTypeFamily
 
 /** Navigation object
  *
  * @param screen Navigation object provide a unique screen
  * @param icon Navigation object's icon
- * @param title Navigation object's title
+ * @param relatedRoutes Routes that also belong to this tab section
  */
 sealed class MyNavItem(
     val screen: Screen,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val relatedRoutes: List<String> = emptyList()
 ) {
 
     data object Home : MyNavItem(
         screen = Screen.Home,
-        icon = Icons.Outlined.Alarm
+        icon = Icons.Outlined.Alarm,
+        relatedRoutes = listOf(Screen.AddAlarm.route)
     )
 
     data object Groups : MyNavItem(
         screen = Screen.Groups,
-        icon = Icons.Outlined.Group
+        icon = Icons.Outlined.Group,
+        relatedRoutes = listOf(Screen.AddMembers.route, Screen.NewGroup.route)
     )
 
     data object Profile : MyNavItem(
@@ -98,31 +91,29 @@ fun BottomBarTabs(
             .background(MaterialTheme.colorScheme.onSurface)
             .fillMaxSize(),
     ) {
-        tabs.forEachIndexed { index, tab ->
+        tabs.forEach { tab ->
+            // Check if current route matches main screen or any related sub-screens
+            val isSelected = currentRoute == tab.screen.route || tab.relatedRoutes.contains(currentRoute)
+
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .padding(horizontal = 8.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(26))
                     .weight(1f)
-                    // if current route == tab route -> checked background
-                    .background(if (currentRoute == tab.screen.route) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface)
+                    .background(if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface)
                     .clickable {
                         navController.navigate(tab.screen.route) {
-                            // only one copy of screen we can use
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
-                            // only one same screen at the top
                             launchSingleTop = true
-                            // save screen state after another screen
                             restoreState = true
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
-                    modifier = Modifier,
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
