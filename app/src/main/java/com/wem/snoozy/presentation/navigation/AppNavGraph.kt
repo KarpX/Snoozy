@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.wem.snoozy.presentation.screen.AddMembersScreen
 import com.wem.snoozy.presentation.screen.BottomSheetContentAdd
 import com.wem.snoozy.presentation.screen.GroupsScreen
 import com.wem.snoozy.presentation.screen.MainScreen
@@ -41,7 +42,8 @@ fun AppNavGraph(
             MainScreen()
         }
         composable(Screen.Groups.route) {
-            GroupsScreen()
+//            GroupsScreen()
+            AddMembersScreen()
         }
         composable(Screen.Profile.route) {
             ProfileScreen()
