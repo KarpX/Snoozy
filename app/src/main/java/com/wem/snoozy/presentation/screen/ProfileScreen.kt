@@ -36,8 +36,6 @@ import com.wem.snoozy.ui.theme.SnoozyTheme
 
 @Composable
 fun ProfileScreen() {
-    val load = remember {  mutableStateOf(true) }
-
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
