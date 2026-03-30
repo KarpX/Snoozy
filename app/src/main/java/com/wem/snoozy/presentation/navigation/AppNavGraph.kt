@@ -1,21 +1,13 @@
 package com.wem.snoozy.presentation.navigation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.wem.snoozy.presentation.screen.BottomSheetContent
+import com.wem.snoozy.presentation.screen.BottomSheetContentAdd
 import com.wem.snoozy.presentation.screen.GroupsScreen
 import com.wem.snoozy.presentation.screen.MainScreen
 import com.wem.snoozy.presentation.screen.ProfileScreen
@@ -55,7 +47,7 @@ fun AppNavGraph(
             ProfileScreen()
         }
         composable(Screen.AddAlarm.route) {
-            BottomSheetContent {  }
+            BottomSheetContentAdd {  }
         }
     }
 

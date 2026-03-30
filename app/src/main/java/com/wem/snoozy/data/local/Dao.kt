@@ -2,14 +2,18 @@ package com.wem.snoozy.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface Dao {
 
-    @Insert
-    suspend fun addAlarm(alarmItemModel: AlarmItemModel)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addAlarm(alarmItemModel: AlarmItemModel): Long
+
+    @Query("SELECT * FROM alarms WHERE id = :alarmId")
+    suspend fun getAlarmById(alarmId: Int): AlarmItemModel?
 
     @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
     fun getAlarms(): Flow<List<AlarmItemModel>>

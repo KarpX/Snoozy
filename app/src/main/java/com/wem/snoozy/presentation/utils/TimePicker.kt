@@ -22,10 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.wem.snoozy.R
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import java.time.LocalTime
 
@@ -71,21 +73,21 @@ fun TimePickerDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Button(
                         onClick = { onCancelClick() },
                         colors = ButtonDefaults.buttonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.onSurface
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Text(
-                            "Cancel",
-                            fontSize = 20.sp,
+                            stringResource(R.string.cancel).uppercase(),
+                            fontSize = 15.sp,
                             fontFamily = myTypeFamily,
                             fontWeight = FontWeight(900),
-                            color = MaterialTheme.colorScheme.tertiary
+                            color = Color(0xffEC625F)
                         )
                     }
                     Button(
@@ -95,15 +97,15 @@ fun TimePickerDialog(
                             )
                         },
                         colors = ButtonDefaults.buttonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.onBackground
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Text(
-                            "Apply",
-                            fontSize = 20.sp,
+                            stringResource(R.string.save).uppercase(),
+                            fontSize = 15.sp,
                             fontFamily = myTypeFamily,
                             fontWeight = FontWeight(900),
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.tertiary
                         )
                     }
                 }

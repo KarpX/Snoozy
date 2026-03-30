@@ -23,7 +23,8 @@ private val DarkColorScheme = darkColorScheme(
     onTertiaryContainer = White,
     surface = AnthraciteGray,
     onSurface = StoneGray,
-    onSurfaceVariant = CoralRed
+    onSurfaceVariant = CoralRed,
+    background = Color(0xff313131)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -38,6 +39,7 @@ private val LightColorScheme = lightColorScheme(
     surface = White, // bottom sheet background
     onSurface = GraphiteGray, // element's background in bottom sheet
     onSurfaceVariant = Lime, // checked cycle
+    background = Color.White
 
 
 

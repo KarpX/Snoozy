@@ -16,15 +16,17 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wem.snoozy.R
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerDialog(
@@ -55,16 +57,15 @@ fun DatePickerDialog(
                     }
                 },
                 colors = ButtonDefaults.buttonColors().copy(
-                    containerColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    "Apply",
-                    fontSize = 20.sp,
+                    stringResource(R.string.save).uppercase(),
+                    fontSize = 15.sp,
                     fontFamily = myTypeFamily,
                     fontWeight = FontWeight(900),
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
         },
@@ -72,16 +73,15 @@ fun DatePickerDialog(
             Button(
                 onClick = { onCancelClick() },
                 colors = ButtonDefaults.buttonColors().copy(
-                    containerColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                modifier = Modifier.padding(vertical = 16.dp)
             ) {
                 Text(
-                    "Cancel",
-                    fontSize = 20.sp,
+                    stringResource(R.string.cancel).uppercase(),
+                    fontSize = 15.sp,
                     fontFamily = myTypeFamily,
                     fontWeight = FontWeight(900),
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = Color(0xffEC625F)
                 )
             }
         },
@@ -106,15 +106,26 @@ fun DatePickerDialog(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun formatDateWithRelative(date: LocalDate): String {
     val today = LocalDate.now()
-    val formatter = DateTimeFormatter.ofPattern("MM.dd.yyyy").withLocale(Locale.ENGLISH)
+    val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(Locale.ENGLISH)
 
     return when (date) {
-        today -> "Today"
-        today.plusDays(1) -> "Tomorrow"
-        today.plusDays(2) -> "Next day"
+        today -> "Сегодня"
+        today.plusDays(1) -> "Завтра"
+        today.plusDays(2) -> "Послезавтра"
         else -> date.format(formatter)
+    }
+}
+
+fun String.formatStringToDate(): LocalDate {
+    val today = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(Locale.ENGLISH)
+
+    return when (this) {
+        "Сегодня" -> today
+        "Завтра" -> today.plusDays(1)
+        "Послезавтра" -> today.plusDays(2)
+        else -> LocalDate.parse(this, formatter)
     }
 }

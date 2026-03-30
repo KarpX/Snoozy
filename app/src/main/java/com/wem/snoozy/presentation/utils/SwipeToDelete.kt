@@ -26,7 +26,8 @@ import com.wem.snoozy.presentation.itemCard.AlarmItemCard
 fun SwipeToDeleteAlarmItem(
     alarmItem: AlarmItem,
     onDelete: () -> Unit,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onEditClick: (AlarmItem) -> Unit
 ) {
     val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
@@ -64,8 +65,8 @@ fun SwipeToDeleteAlarmItem(
     ) {
         AlarmItemCard(
             alarmItem = alarmItem,
-        ) {
-            onToggle()
-        }
+            onToggle = onToggle,
+            onEditClick = { onEditClick(alarmItem) }
+        )
     }
 }

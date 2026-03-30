@@ -5,6 +5,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +48,8 @@ val myTypeFamily = FontFamily(
 fun AlarmItemCard(
     modifier: Modifier = Modifier,
     alarmItem: AlarmItem,
-    onToggle: () -> Unit = {}
+    onToggle: () -> Unit = {},
+    onEditClick: (AlarmItem) -> Unit = {}
 ) {
 
     val checked = alarmItem.checked
@@ -69,6 +72,9 @@ fun AlarmItemCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .clickable {
+                onEditClick(alarmItem)
+            }
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .then(
                 if (checked) {
@@ -83,7 +89,7 @@ fun AlarmItemCard(
         shape = CircleShape.copy(CornerSize(20))
     ) {
 
-        val textTimeToBed =  if (alarmItem.timeToBed.isNotEmpty()) "Time to bed: " + alarmItem.timeToBed else ""
+        val textTimeToBed =  if (alarmItem.timeToBed.isNotEmpty()) stringResource(R.string.time_to_bed) + alarmItem.timeToBed else ""
 
         Column(
             modifier = modifier

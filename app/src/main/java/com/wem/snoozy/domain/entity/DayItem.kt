@@ -18,13 +18,13 @@ enum class DaysName {
 
     fun getDisplayName(): String {
         return when (this) {
-            MONDAY -> "M"
-            TUESDAY -> "T"
-            WEDNESDAY -> "W"
-            THURSDAY -> "T"
-            FRIDAY -> "F"
-            SATURDAY -> "S"
-            SUNDAY -> "S"
+            MONDAY -> "Пн"
+            TUESDAY -> "Вт"
+            WEDNESDAY -> "Ср"
+            THURSDAY -> "Чт"
+            FRIDAY -> "Пт"
+            SATURDAY -> "Сб"
+            SUNDAY -> "Вс"
         }
     }
 }

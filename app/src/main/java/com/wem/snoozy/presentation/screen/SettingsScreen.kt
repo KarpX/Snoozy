@@ -37,13 +37,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wem.snoozy.R
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.viewModel.SettingsCommand
@@ -53,10 +56,7 @@ import com.wem.snoozy.presentation.viewModel.SettingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    context: Context = LocalContext.current.applicationContext,
-    viewModel: SettingsViewModel = viewModel {
-        SettingsViewModel(UserPreferencesManager(context))
-    }
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
 
     // TODO: ПРИ ВЫХОДЕ ИЗ ПРИЛОЖЕНИЯ В НАСТРОЙКАХ С ПУСТЫМИ ПАРАМЕТРАМИ ОНИ ОСТАНУТСЯ ПУСТЫМИ ПРИ СЛЕД. ЗАХОДЕ
@@ -73,14 +73,16 @@ fun SettingsScreen(
     when (currentState) {
         is SettingsState.Content -> {
             Column(
-                modifier = Modifier.padding(top = 48.dp)
+                modifier = Modifier.padding(top = 16.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        "Settings",
+                        stringResource(R.string.settings),
                         fontSize = 25.sp,
                         fontFamily = myTypeFamily,
                         fontWeight = FontWeight(700),
@@ -88,7 +90,7 @@ fun SettingsScreen(
                     )
                 }
                 SettingsName(
-                    name = "APP THEME",
+                    name = stringResource(R.string.app_theme),
                     imageVector = Icons.Outlined.DarkMode,
                     modifier = Modifier
                         .padding(horizontal = 24.dp)
@@ -103,7 +105,7 @@ fun SettingsScreen(
                 }
                 Spacer(modifier = Modifier.height(32.dp))
                 SettingsName(
-                    name = "ALARM SETTINGS",
+                    name = stringResource(R.string.alarm_settings),
                     imageVector = Icons.Outlined.Alarm,
                     modifier = Modifier
                         .padding(horizontal = 24.dp)
@@ -180,7 +182,7 @@ fun ThemeSettingsBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Dark mode",
+                text = stringResource(R.string.dark_mode),
                 fontSize = 21.sp,
                 fontFamily = myTypeFamily,
                 fontWeight = FontWeight(500),
@@ -236,7 +238,7 @@ fun AlarmSettingsBlock(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Cycle length",
+                    text = stringResource(R.string.cycle_length),
                     fontSize = 21.sp,
                     fontFamily = myTypeFamily,
                     fontWeight = FontWeight(500),
@@ -293,7 +295,7 @@ fun AlarmSettingsBlock(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "min.",
+                        text = stringResource(R.string.minutes),
                         fontSize = 21.sp,
                         fontFamily = myTypeFamily,
                         fontWeight = FontWeight(500),
@@ -314,7 +316,7 @@ fun AlarmSettingsBlock(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Sleep head-start",
+                    text = stringResource(R.string.sleep_start_time),
                     fontSize = 21.sp,
                     fontFamily = myTypeFamily,
                     fontWeight = FontWeight(500),
@@ -371,7 +373,7 @@ fun AlarmSettingsBlock(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "min.",
+                        text = stringResource(R.string.minutes),
                         fontSize = 21.sp,
                         fontFamily = myTypeFamily,
                         fontWeight = FontWeight(500),
