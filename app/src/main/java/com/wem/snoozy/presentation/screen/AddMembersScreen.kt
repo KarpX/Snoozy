@@ -1,6 +1,8 @@
 package com.wem.snoozy.presentation.screen
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -63,19 +65,28 @@ fun AddMembersScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        ){
-            MembersSearchBar()
+        ) {
+            Column() {
+                MembersSearchBar()
+                SelectedMembers(
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .padding(horizontal = 16.dp)
+                )
+            }
+
         }
     }
 }
 
 @Composable
-fun MembersSearchBar(){
-    val searchText = remember{mutableStateOf("")}
+fun MembersSearchBar() {
+    val searchText = remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()){
+            .fillMaxWidth()
+    ) {
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,18 +100,23 @@ fun MembersSearchBar(){
                 cursorColor = MaterialTheme.colorScheme.tertiary
             ),
             value = searchText.value,
-            onValueChange = {searchText.value = it},
-            placeholder = {Text(
-                text = "Поиск...",
-                fontSize = 18.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight(900),
-                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.65f))},
-            leadingIcon = { Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f)
-            )},
+            onValueChange = { searchText.value = it },
+            placeholder = {
+                Text(
+                    text = "Поиск...",
+                    fontSize = 18.sp,
+                    fontFamily = myTypeFamily,
+                    fontWeight = FontWeight(900),
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.65f)
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f)
+                )
+            },
             textStyle = TextStyle(
                 fontSize = 18.sp,
                 fontFamily = myTypeFamily,
@@ -108,6 +124,24 @@ fun MembersSearchBar(){
                 color = MaterialTheme.colorScheme.tertiary
             ),
             singleLine = true
+        )
+    }
+}
+
+@Composable
+fun SelectedMembers(
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = "Выберите участников",
+            fontSize = 22.sp,
+            fontFamily = myTypeFamily,
+            fontWeight = FontWeight(900),
+            color = MaterialTheme.colorScheme.tertiary
         )
     }
 }
