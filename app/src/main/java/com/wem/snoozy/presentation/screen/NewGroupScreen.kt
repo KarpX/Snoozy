@@ -1,5 +1,10 @@
 package com.wem.snoozy.presentation.screen
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +24,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -27,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -41,12 +50,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.wem.snoozy.R
@@ -54,6 +67,7 @@ import com.wem.snoozy.domain.entity.ContactItem
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.viewModel.AddMembersViewModel
 import com.wem.snoozy.ui.theme.SnoozyTheme
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,15 +75,45 @@ fun NewGroupScreen(
     onBackClick: () -> Unit = {},
     viewModel: AddMembersViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val selectedContacts = remember(state.selectedContactIds) {
         viewModel.getSelectedContacts()
     }
 
     var groupName by remember { mutableStateOf("") }
+    var groupAvatarUri by remember { mutableStateOf<Uri?>(null) }
     var isNameManuallyChanged by remember { mutableStateOf(false) }
+    var showImagePickerDialog by remember { mutableStateOf(false) }
 
-    // Автоматически заполняем имя группы списком имен участников, если оно не изменено вручную
+    // Вспомогательная функция для создания Uri файла
+    fun createTempPictureUri(): Uri {
+        val file = File(context.cacheDir, "images/group_avatar_${System.currentTimeMillis()}.jpg")
+        file.parentFile?.mkdirs()
+        return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    }
+
+    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Лаунчер для камеры
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) groupAvatarUri = tempPhotoUri
+    }
+
+    // Лаунчер для запроса разрешения
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            val uri = createTempPictureUri()
+            tempPhotoUri = uri
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    // Лаунчер для галереи
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) groupAvatarUri = uri
+    }
+
     LaunchedEffect(selectedContacts) {
         if (!isNameManuallyChanged) {
             groupName = selectedContacts.joinToString(", ") { it.name }
@@ -109,10 +153,12 @@ fun NewGroupScreen(
             ) {
                 MainGroupInfo(
                     value = groupName,
+                    avatarUri = groupAvatarUri,
                     onValueChange = {
                         groupName = it
                         isNameManuallyChanged = true
-                    }
+                    },
+                    onAvatarClick = { showImagePickerDialog = true }
                 )
                 GroupMembersInNewGroup(members = selectedContacts)
             }
@@ -126,7 +172,54 @@ fun NewGroupScreen(
                 CreateGroupButton()
             }
         }
+
+        if (showImagePickerDialog) {
+            ImageSourceDialog(
+                onDismiss = { showImagePickerDialog = false },
+                onGalleryClick = {
+                    showImagePickerDialog = false
+                    galleryLauncher.launch("image/*")
+                },
+                onCameraClick = {
+                    showImagePickerDialog = false
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        val uri = createTempPictureUri()
+                        tempPhotoUri = uri
+                        cameraLauncher.launch(uri)
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun ImageSourceDialog(
+    onDismiss: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Выбрать фото группы") },
+        text = { Text(text = "Откуда вы хотите загрузить изображение?") },
+        confirmButton = {
+            TextButton(onClick = onGalleryClick) {
+                Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Галерея")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCameraClick) {
+                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Камера")
+            }
+        }
+    )
 }
 
 @Composable
@@ -156,7 +249,9 @@ fun CreateGroupButton(
 @Composable
 fun MainGroupInfo(
     value: String,
+    avatarUri: Uri?,
     onValueChange: (String) -> Unit,
+    onAvatarClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -178,15 +273,24 @@ fun MainGroupInfo(
                     .shadow(1.dp, RoundedCornerShape(50))
                     .clip(RoundedCornerShape(50))
                     .background(Color.White)
-                    .clickable { /* TODO */ },
+                    .clickable { onAvatarClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    modifier = Modifier.size(32.dp),
-                    painter = painterResource(R.drawable.ic_add_image),
-                    tint = Color.Unspecified,
-                    contentDescription = null
-                )
+                if (avatarUri != null) {
+                    AsyncImage(
+                        model = avatarUri,
+                        contentDescription = "Group Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        modifier = Modifier.size(32.dp),
+                        painter = painterResource(R.drawable.ic_add_image),
+                        tint = Color.Unspecified,
+                        contentDescription = null
+                    )
+                }
             }
 
             TextField(
