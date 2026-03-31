@@ -32,7 +32,6 @@ fun AppNavGraph(
         composable(Screen.Settings.route) { SettingsScreen() }
         composable(Screen.Home.route) { MainScreen() }
         
-        // Группируем экраны создания группы, чтобы использовать одну ViewModel
         navigation(
             startDestination = Screen.Groups.route,
             route = "groups_flow"
@@ -42,7 +41,6 @@ fun AppNavGraph(
             }
             
             composable(Screen.AddMembers.route) { entry ->
-                // Получаем ViewModel, привязанную к этому "flow" (маршруту navigation)
                 val parentEntry = remember(entry) { navController.getBackStackEntry("groups_flow") }
                 val viewModel: AddMembersViewModel = hiltViewModel(parentEntry)
                 
@@ -58,7 +56,10 @@ fun AppNavGraph(
                 val viewModel: AddMembersViewModel = hiltViewModel(parentEntry)
                 
                 NewGroupScreen(
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = { 
+                        // Возвращаемся сразу к списку групп
+                        navController.popBackStack(Screen.Groups.route, inclusive = false) 
+                    },
                     viewModel = viewModel
                 )
             }

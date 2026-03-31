@@ -51,8 +51,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -62,7 +60,6 @@ import com.wem.snoozy.R
 import com.wem.snoozy.domain.entity.ContactItem
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.viewModel.AddMembersViewModel
-import com.wem.snoozy.ui.theme.SnoozyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +83,9 @@ fun AddMembersScreen(
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        } else {
+            // Если разрешение уже есть, загружаем контакты
+            viewModel.loadContacts()
         }
     }
 
@@ -143,12 +143,11 @@ fun AddMembersScreen(
                     isLoading = state.isLoading,
                     onContactClick = { viewModel.toggleSelection(it.id) },
                     modifier = Modifier
-                        .weight(1f)
                         .padding(horizontal = 16.dp)
                         .padding(top = 16.dp)
                 )
             }
-
+            BottomGradientShadow()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -235,7 +234,7 @@ fun SelectedMembersList(
     onRemoveClick: (ContactItem) -> Unit
 ) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -272,7 +271,9 @@ fun MembersList(
     onContactClick: (ContactItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+    ) {
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else if (contacts.isEmpty()) {
@@ -295,6 +296,7 @@ fun MembersList(
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(contacts, key = { it.id + it.phoneNumber }) { contact ->
                     ContactRow(contact = contact, onClick = { onContactClick(contact) })

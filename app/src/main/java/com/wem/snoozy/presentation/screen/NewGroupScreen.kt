@@ -22,16 +22,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -146,7 +149,7 @@ fun NewGroupScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -159,6 +162,10 @@ fun NewGroupScreen(
                         isNameManuallyChanged = true
                     },
                     onAvatarClick = { showImagePickerDialog = true }
+                    onClearClick = {
+                        groupName = ""
+                        isNameManuallyChanged = true
+                    }
                 )
                 GroupMembersInNewGroup(members = selectedContacts)
             }
@@ -169,7 +176,13 @@ fun NewGroupScreen(
                     .padding(vertical = 16.dp, horizontal = 32.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
-                CreateGroupButton()
+                CreateGroupButton(
+                    onClick = {
+                        viewModel.createGroup(groupName) {
+                            onBackClick()
+                        }
+                    }
+                )
             }
         }
 
@@ -225,6 +238,7 @@ fun ImageSourceDialog(
 @Composable
 fun CreateGroupButton(
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -233,7 +247,7 @@ fun CreateGroupButton(
             .clip(RoundedCornerShape(50))
             .background(MaterialTheme.colorScheme.onTertiary)
             .clickable {
-//                onAddClick()
+                onClick()
             },
         contentAlignment = Alignment.Center
     ) {
@@ -252,6 +266,7 @@ fun MainGroupInfo(
     avatarUri: Uri?,
     onValueChange: (String) -> Unit,
     onAvatarClick: () -> Unit,
+    onClearClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -302,10 +317,21 @@ fun MainGroupInfo(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = MaterialTheme.colorScheme.tertiary
                 ),
+                trailingIcon = {
+                    if (value.isNotEmpty()) {
+                        IconButton(onClick = onClearClick) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                },
                 placeholder = {
                     Text(
                         text = "Название группы",

@@ -3,6 +3,8 @@ package com.wem.snoozy.presentation.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wem.snoozy.domain.entity.ContactItem
+import com.wem.snoozy.domain.entity.GroupItem
+import com.wem.snoozy.domain.repository.AlarmRepository
 import com.wem.snoozy.domain.repository.ContactRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,11 +25,12 @@ data class AddMembersState(
 
 @HiltViewModel
 class AddMembersViewModel @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val alarmRepository: AlarmRepository
 ) : ViewModel() {
 
     private val _searchText = MutableStateFlow("")
-    private val _isLoading = MutableStateFlow(true)
+    private val _isLoading = MutableStateFlow(false)
     private val _selectedContactIds = MutableStateFlow<Set<String>>(emptySet())
     private val _allContacts = MutableStateFlow<List<ContactItem>>(emptyList())
 
@@ -51,11 +54,9 @@ class AddMembersViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AddMembersState())
 
-    init {
-        loadContacts()
-    }
-
     fun loadContacts() {
+        if (_isLoading.value) return
+        
         _isLoading.value = true
         viewModelScope.launch {
             contactRepository.fetchContacts().collect { contacts ->
@@ -77,5 +78,20 @@ class AddMembersViewModel @Inject constructor(
     
     fun getSelectedContacts(): List<ContactItem> {
         return _allContacts.value.filter { _selectedContactIds.value.contains(it.id) }
+    }
+
+    fun createGroup(name: String, onComplete: () -> Unit) {
+        val selectedContacts = getSelectedContacts()
+        if (name.isBlank() || selectedContacts.isEmpty()) return
+
+        viewModelScope.launch {
+            val group = GroupItem(
+                name = name,
+                membersCount = selectedContacts.size,
+                contactIds = selectedContacts.joinToString(",") { it.id }
+            )
+            alarmRepository.addGroup(group)
+            onComplete()
+        }
     }
 }
