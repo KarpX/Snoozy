@@ -161,7 +161,7 @@ fun NewGroupScreen(
                         groupName = it
                         isNameManuallyChanged = true
                     },
-                    onAvatarClick = { showImagePickerDialog = true }
+                    onAvatarClick = { showImagePickerDialog = true },
                     onClearClick = {
                         groupName = ""
                         isNameManuallyChanged = true
@@ -178,7 +178,7 @@ fun NewGroupScreen(
             ) {
                 CreateGroupButton(
                     onClick = {
-                        viewModel.createGroup(groupName) {
+                        viewModel.createGroup(groupName, groupAvatarUri?.toString()) {
                             onBackClick()
                         }
                     }

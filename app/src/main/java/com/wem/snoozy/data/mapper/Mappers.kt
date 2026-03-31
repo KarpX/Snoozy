@@ -41,14 +41,16 @@ fun GroupItemModel.toGroupItem() = GroupItem(
     this.id,
     this.name,
     this.membersCount,
-    this.contactIds
+    this.contactIds,
+    this.avatarUri // ДОБАВЛЕНО
 )
 
 fun GroupItem.toGroupItemModel() = GroupItemModel(
     this.id,
     this.name,
     this.membersCount,
-    this.contactIds
+    this.contactIds,
+    this.avatarUri // ДОБАВЛЕНО
 )
 
 fun List<GroupItemModel>.toGroupItems() = this.map { it.toGroupItem() }

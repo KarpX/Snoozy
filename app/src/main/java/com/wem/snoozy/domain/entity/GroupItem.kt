@@ -4,5 +4,6 @@ data class GroupItem(
     val id: Int = 0,
     val name: String,
     val membersCount: Int,
-    val contactIds: String // Список ID контактов через запятую
+    val contactIds: String,
+    val avatarUri: String? = null
 )
