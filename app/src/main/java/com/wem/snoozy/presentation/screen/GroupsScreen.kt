@@ -3,12 +3,12 @@ package com.wem.snoozy.presentation.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -16,30 +16,37 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.wem.snoozy.presentation.itemCard.GroupItemCard
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
-import com.wem.snoozy.ui.theme.SnoozyTheme
+import com.wem.snoozy.presentation.viewModel.MainState
+import com.wem.snoozy.presentation.viewModel.MainViewModel
 
 @Composable
 fun GroupsScreen(
-    onAddGroupClick: () -> Unit = {}
+    onAddGroupClick: () -> Unit = {},
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
-    // В будущем здесь будет список групп из ViewModel
-    val groupsCount = 0 
+    val state by mainViewModel.state.collectAsState()
+    
+    // Безопасно извлекаем список групп из состояния
+    val groups = (state as? MainState.Content)?.groupList ?: emptyList()
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        if (groupsCount == 0) {
+        if (groups.isEmpty()) {
             Text(
                 text = "У вас пока нет\nгрупп",
                 fontSize = 20.sp,
@@ -50,13 +57,17 @@ fun GroupsScreen(
                 lineHeight = 28.sp
             )
         } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
             ) {
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    // Здесь будет отрисовка групп
+                items(groups, key = { it.id }) { group ->
+                    GroupItemCard(
+                        groupItem = group,
+                        onClick = {
+                            // В будущем здесь будет переход к деталям группы
+                        }
+                    )
                 }
             }
         }
@@ -96,15 +107,5 @@ fun AddGroupButton(
             modifier = Modifier.size(70.dp),
             tint = MaterialTheme.colorScheme.onTertiaryContainer
         )
-    }
-}
-
-@Composable
-@Preview(
-    showBackground = true
-)
-fun GroupScreenPreview() {
-    SnoozyTheme {
-        GroupsScreen()
     }
 }

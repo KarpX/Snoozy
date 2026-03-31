@@ -51,8 +51,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -62,7 +60,6 @@ import com.wem.snoozy.R
 import com.wem.snoozy.domain.entity.ContactItem
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.viewModel.AddMembersViewModel
-import com.wem.snoozy.ui.theme.SnoozyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +83,9 @@ fun AddMembersScreen(
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        } else {
+            // Если разрешение уже есть, загружаем контакты
+            viewModel.loadContacts()
         }
     }
 
