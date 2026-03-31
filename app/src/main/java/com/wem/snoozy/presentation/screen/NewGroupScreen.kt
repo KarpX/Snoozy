@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -99,23 +100,26 @@ fun NewGroupScreen(
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
     // Лаунчер для камеры
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) groupAvatarUri = tempPhotoUri
-    }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) groupAvatarUri = tempPhotoUri
+        }
 
     // Лаунчер для запроса разрешения
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            val uri = createTempPictureUri()
-            tempPhotoUri = uri
-            cameraLauncher.launch(uri)
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                val uri = createTempPictureUri()
+                tempPhotoUri = uri
+                cameraLauncher.launch(uri)
+            }
         }
-    }
 
     // Лаунчер для галереи
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) groupAvatarUri = uri
-    }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) groupAvatarUri = uri
+        }
 
     LaunchedEffect(selectedContacts) {
         if (!isNameManuallyChanged) {
@@ -195,7 +199,11 @@ fun NewGroupScreen(
                 },
                 onCameraClick = {
                     showImagePickerDialog = false
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
                         val uri = createTempPictureUri()
                         tempPhotoUri = uri
                         cameraLauncher.launch(uri)
@@ -215,18 +223,45 @@ fun ImageSourceDialog(
     onCameraClick: () -> Unit
 ) {
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = onDismiss,
-        title = { Text(text = "Выбрать фото группы") },
-        text = { Text(text = "Откуда вы хотите загрузить изображение?") },
+        title = {
+            Text(
+                text = "Выбрать фото группы",
+                fontSize = 24.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight(600),
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        },
+        text = {
+            Text(
+                text = "Откуда вы хотите загрузить изображение?",
+                fontSize = 18.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight(600),
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        },
         confirmButton = {
-            TextButton(onClick = onGalleryClick) {
+            TextButton(
+                onClick = onGalleryClick,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
                 Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Галерея")
             }
         },
         dismissButton = {
-            TextButton(onClick = onCameraClick) {
+            TextButton(
+                onClick = onCameraClick,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Камера")
@@ -380,7 +415,9 @@ fun GroupMembersInNewGroup(
 
             if (members.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

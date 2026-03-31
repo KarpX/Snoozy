@@ -34,7 +34,7 @@ data class AddMembersState(
 class AddMembersViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val alarmRepository: AlarmRepository,
-    @ApplicationContext private val context: Context // Добавили контекст для работы с файлами
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _searchText = MutableStateFlow("")
@@ -88,6 +88,11 @@ class AddMembersViewModel @Inject constructor(
         return _allContacts.value.filter { _selectedContactIds.value.contains(it.id) }
     }
 
+    fun clearSelection() {
+        _selectedContactIds.value = emptySet()
+        _searchText.value = ""
+    }
+
     fun createGroup(name: String, avatarUriString: String?, onComplete: () -> Unit) {
         val selectedContacts = getSelectedContacts()
         if (name.isBlank() || selectedContacts.isEmpty()) return
@@ -106,6 +111,7 @@ class AddMembersViewModel @Inject constructor(
                 avatarUri = finalAvatarPath
             )
             alarmRepository.addGroup(group)
+            clearSelection() // Сбрасываем выбор после успешного сохранения
             onComplete()
         }
     }

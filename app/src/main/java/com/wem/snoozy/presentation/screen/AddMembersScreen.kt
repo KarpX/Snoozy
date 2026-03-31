@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,7 +89,6 @@ fun AddMembersScreen(
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
         } else {
-            // Если разрешение уже есть, загружаем контакты
             viewModel.loadContacts()
         }
     }
@@ -154,7 +158,20 @@ fun AddMembersScreen(
                     .padding(vertical = 16.dp, horizontal = 32.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
-                AddMembersButton(onNextClick = onNextClick)
+                val isVisible = state.selectedContactIds.isNotEmpty()
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    AddMembersButton(
+                        onNextClick = {
+                            if (isVisible) {
+                                onNextClick()
+                            }
+                        }
+                    )
+                }
             }
         }
     }
