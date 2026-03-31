@@ -143,12 +143,11 @@ fun AddMembersScreen(
                     isLoading = state.isLoading,
                     onContactClick = { viewModel.toggleSelection(it.id) },
                     modifier = Modifier
-                        .weight(1f)
                         .padding(horizontal = 16.dp)
                         .padding(top = 16.dp)
                 )
             }
-
+            BottomGradientShadow()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -235,7 +234,7 @@ fun SelectedMembersList(
     onRemoveClick: (ContactItem) -> Unit
 ) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -272,7 +271,9 @@ fun MembersList(
     onContactClick: (ContactItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+    ) {
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else if (contacts.isEmpty()) {
@@ -295,6 +296,7 @@ fun MembersList(
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(contacts, key = { it.id + it.phoneNumber }) { contact ->
                     ContactRow(contact = contact, onClick = { onContactClick(contact) })

@@ -102,7 +102,7 @@ fun NewGroupScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally

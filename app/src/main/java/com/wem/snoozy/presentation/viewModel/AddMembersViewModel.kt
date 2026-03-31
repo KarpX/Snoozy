@@ -27,7 +27,7 @@ class AddMembersViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _searchText = MutableStateFlow("")
-    private val _isLoading = MutableStateFlow(true)
+    private val _isLoading = MutableStateFlow(false) // Изначально false, пока не начали загрузку
     private val _selectedContactIds = MutableStateFlow<Set<String>>(emptySet())
     private val _allContacts = MutableStateFlow<List<ContactItem>>(emptyList())
 
@@ -51,11 +51,11 @@ class AddMembersViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AddMembersState())
 
-    init {
-        loadContacts()
-    }
+    // Убрали loadContacts() из init {}, чтобы не падать без разрешений
 
     fun loadContacts() {
+        if (_isLoading.value) return // Избегаем повторных загрузок
+
         _isLoading.value = true
         viewModelScope.launch {
             contactRepository.fetchContacts().collect { contacts ->
