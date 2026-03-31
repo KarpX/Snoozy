@@ -4,9 +4,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import com.wem.snoozy.presentation.screen.AddMembersScreen
 import com.wem.snoozy.presentation.screen.BottomSheetContentAdd
 import com.wem.snoozy.presentation.screen.GroupsScreen
@@ -14,64 +17,54 @@ import com.wem.snoozy.presentation.screen.MainScreen
 import com.wem.snoozy.presentation.screen.NewGroupScreen
 import com.wem.snoozy.presentation.screen.ProfileScreen
 import com.wem.snoozy.presentation.screen.SettingsScreen
+import com.wem.snoozy.presentation.viewModel.AddMembersViewModel
 
-/**
- * Application NavGraph to navigate user
- *
- * @param navController Controller for navigation
- */
 @Composable
 fun AppNavGraph(
     navController: NavHostController
 ) {
-
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
-        enterTransition = {
-            fadeIn(animationSpec = tween(durationMillis = 0))
-        },
-        exitTransition = {
-            fadeOut(animationSpec = tween(durationMillis = 0))
-        }
+        enterTransition = { fadeIn(animationSpec = tween(durationMillis = 0)) },
+        exitTransition = { fadeOut(animationSpec = tween(durationMillis = 0)) }
     ) {
+        composable(Screen.Settings.route) { SettingsScreen() }
+        composable(Screen.Home.route) { MainScreen() }
+        
+        // Группируем экраны создания группы, чтобы использовать одну ViewModel
+        navigation(
+            startDestination = Screen.Groups.route,
+            route = "groups_flow"
+        ) {
+            composable(Screen.Groups.route) {
+                GroupsScreen(onAddGroupClick = { navController.navigate(Screen.AddMembers.route) })
+            }
+            
+            composable(Screen.AddMembers.route) { entry ->
+                // Получаем ViewModel, привязанную к этому "flow" (маршруту navigation)
+                val parentEntry = remember(entry) { navController.getBackStackEntry("groups_flow") }
+                val viewModel: AddMembersViewModel = hiltViewModel(parentEntry)
+                
+                AddMembersScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNextClick = { navController.navigate(Screen.NewGroup.route) },
+                    viewModel = viewModel
+                )
+            }
+            
+            composable(Screen.NewGroup.route) { entry ->
+                val parentEntry = remember(entry) { navController.getBackStackEntry("groups_flow") }
+                val viewModel: AddMembersViewModel = hiltViewModel(parentEntry)
+                
+                NewGroupScreen(
+                    onBackClick = { navController.popBackStack() },
+                    viewModel = viewModel
+                )
+            }
+        }
 
-        composable(Screen.Settings.route) {
-            SettingsScreen()
-        }
-        composable(Screen.Home.route) {
-            MainScreen()
-        }
-        composable(Screen.Groups.route) {
-            GroupsScreen(
-                onAddGroupClick = {
-                    navController.navigate(Screen.AddMembers.route)
-                }
-            )
-        }
-        composable(Screen.AddMembers.route) {
-            AddMembersScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onNextClick = {
-                    navController.navigate(Screen.NewGroup.route)
-                }
-            )
-        }
-        composable(Screen.NewGroup.route) {
-            NewGroupScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        composable(Screen.Profile.route) {
-            ProfileScreen()
-        }
-        composable(Screen.AddAlarm.route) {
-            BottomSheetContentAdd {  }
-        }
+        composable(Screen.Profile.route) { ProfileScreen() }
+        composable(Screen.AddAlarm.route) { BottomSheetContentAdd { } }
     }
-
 }
