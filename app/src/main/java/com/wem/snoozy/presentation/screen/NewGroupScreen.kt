@@ -20,10 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -112,6 +114,10 @@ fun NewGroupScreen(
                     onValueChange = {
                         groupName = it
                         isNameManuallyChanged = true
+                    },
+                    onClearClick = {
+                        groupName = ""
+                        isNameManuallyChanged = true
                     }
                 )
                 GroupMembersInNewGroup(members = selectedContacts)
@@ -157,6 +163,7 @@ fun CreateGroupButton(
 fun MainGroupInfo(
     value: String,
     onValueChange: (String) -> Unit,
+    onClearClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -198,10 +205,21 @@ fun MainGroupInfo(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = MaterialTheme.colorScheme.tertiary
                 ),
+                trailingIcon = {
+                    if (value.isNotEmpty()) {
+                        IconButton(onClick = onClearClick) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                },
                 placeholder = {
                     Text(
                         text = "Название группы",
