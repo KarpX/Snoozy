@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -129,7 +130,13 @@ fun NewGroupScreen(
                     .padding(vertical = 16.dp, horizontal = 32.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
-                CreateGroupButton()
+                CreateGroupButton(
+                    onClick = {
+                        viewModel.createGroup(groupName) {
+                            onBackClick()
+                        }
+                    }
+                )
             }
         }
     }
@@ -138,6 +145,7 @@ fun NewGroupScreen(
 @Composable
 fun CreateGroupButton(
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -146,7 +154,7 @@ fun CreateGroupButton(
             .clip(RoundedCornerShape(50))
             .background(MaterialTheme.colorScheme.onTertiary)
             .clickable {
-//                onAddClick()
+                onClick()
             },
         contentAlignment = Alignment.Center
     ) {
