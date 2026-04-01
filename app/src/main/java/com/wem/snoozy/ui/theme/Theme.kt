@@ -24,6 +24,9 @@ private val DarkColorScheme = darkColorScheme(
     surface = AnthraciteGray,
     onSurface = StoneGray,
     onSurfaceVariant = CoralRed,
+    primaryFixed = CoralRed,
+    onPrimaryFixed = LightBlack,
+    secondaryFixed = AntiqueWhite,
     background = Color(0xff313131)
 )
 
@@ -39,8 +42,10 @@ private val LightColorScheme = lightColorScheme(
     surface = White, // bottom sheet background
     onSurface = GraphiteGray, // element's background in bottom sheet
     onSurfaceVariant = Lime, // checked cycle
+    primaryFixed = CoralRed,
+    onPrimaryFixed = LightBlack,
+    secondaryFixed = AntiqueWhite,
     background = Color.White
-
 
 
     /* Other default colors to override
