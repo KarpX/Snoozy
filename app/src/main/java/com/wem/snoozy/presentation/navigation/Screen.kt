@@ -9,6 +9,8 @@ sealed class Screen(
     val route: String
 ) {
 
+    object Login: Screen(LOGIN_ROUTE)
+
     object Home: Screen(ROUTE_HOME)
 
     object Settings: Screen(ROUTE_SETTINGS)
@@ -27,5 +29,7 @@ sealed class Screen(
         const val ROUTE_ADD_ALARM = "add_alarm"
         const val ROUTE_ADD_MEMBERS = "add_members"
         const val ROUTE_NEW_GROUP = "new_group"
+
+        const val LOGIN_ROUTE = "login"
     }
 }
