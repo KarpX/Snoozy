@@ -28,7 +28,7 @@
         android:theme="@style/Theme.Snoozy">
 
         <activity
-            android:name=".presentation.activity.MainActivity"
+            android:name=".presentation.activity.AuthActivity"
             android:screenOrientation="portrait"
             android:exported="true"
             android:theme="@style/Theme.Snoozy">
@@ -37,6 +37,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".presentation.activity.MainActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:theme="@style/Theme.Snoozy" />
 
         <activity
             android:name=".presentation.activity.AlarmActivity"

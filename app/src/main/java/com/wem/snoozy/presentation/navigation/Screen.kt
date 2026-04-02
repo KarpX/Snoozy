@@ -10,6 +10,7 @@ sealed class Screen(
 ) {
 
     object Login: Screen(LOGIN_ROUTE)
+    object Registration: Screen(REGISTRATION_ROUTE)
 
     object Home: Screen(ROUTE_HOME)
 
@@ -29,7 +30,7 @@ sealed class Screen(
         const val ROUTE_ADD_ALARM = "add_alarm"
         const val ROUTE_ADD_MEMBERS = "add_members"
         const val ROUTE_NEW_GROUP = "new_group"
-
         const val LOGIN_ROUTE = "login"
+        const val REGISTRATION_ROUTE = "registration"
     }
 }
