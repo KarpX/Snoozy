@@ -95,9 +95,7 @@ fun GroupsScreen(
                             }
                         )
                         if (isExpanded) {
-                            GroupExpandedDetails(
-                                onSettingsClick = { /* TODO: Settings */ }
-                            )
+                            GroupExpandedDetails()
                         }
                     }
                 }
@@ -118,9 +116,7 @@ fun GroupsScreen(
 }
 
 @Composable
-private fun GroupExpandedDetails(
-    onSettingsClick: () -> Unit
-) {
+private fun GroupExpandedDetails() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,46 +128,51 @@ private fun GroupExpandedDetails(
             )
             .padding(bottom = 16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-        
-        MissedAlarmsSection()
+        MissedAlarmsSection(
+            onSettingsClick = {}
+        )
         UpcomingAlarmsSection()
     }
 }
 
 @Composable
-private fun MissedAlarmsSection() {
+private fun MissedAlarmsSection(
+    onSettingsClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Text(
-            text = "Пропущенные будильники",
-            fontSize = 14.sp,
-            fontFamily = myTypeFamily,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primaryFixed,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Пропущенные будильники",
+                fontSize = 14.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primaryFixed,
+            )
+
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.4f))
+                .background(MaterialTheme.colorScheme.primaryFixed)
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
