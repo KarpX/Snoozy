@@ -2,6 +2,7 @@ package com.wem.snoozy.presentation.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wem.snoozy.data.remote.dto.GoogleAuthRequest
 import com.wem.snoozy.data.remote.dto.LoginRequest
 import com.wem.snoozy.data.remote.dto.RegisterRequest
 import com.wem.snoozy.domain.repository.AuthRepository
@@ -17,6 +18,7 @@ sealed class AuthUiState {
     object Loading : AuthUiState()
     object Success : AuthUiState()
     data class Error(val message: String) : AuthUiState()
+    data class NeedPhone(val idToken: String) : AuthUiState()
 }
 
 @HiltViewModel
@@ -61,6 +63,29 @@ class AuthViewModel @Inject constructor(
                 _uiState.value = AuthUiState.Success
             }.onFailure {
                 _uiState.value = AuthUiState.Error(it.message ?: "Ошибка регистрации")
+            }
+        }
+    }
+
+    fun googleAuth(idToken: String, phoneNumber: String? = null) {
+        if (idToken.isBlank()) {
+            _uiState.value = AuthUiState.Error("Google ID Token is empty")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            val result = authRepository.googleAuth(GoogleAuthRequest(idToken, phoneNumber))
+            result.onSuccess {
+                _uiState.value = AuthUiState.Success
+            }.onFailure { exception ->
+                val message = exception.message ?: ""
+                if (message.contains("401") || message.contains("phone") || message.contains("UNAUTHORIZED")) {
+                    // Если сервер вернул 401 или ошибку отсутствия телефона
+                    _uiState.value = AuthUiState.NeedPhone(idToken)
+                } else {
+                    _uiState.value = AuthUiState.Error(message.ifBlank { "Google auth failed" })
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.wem.snoozy.presentation.screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,12 +37,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -57,12 +62,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.wem.snoozy.R
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.viewModel.AuthUiState
 import com.wem.snoozy.presentation.viewModel.AuthViewModel
 import com.wem.snoozy.presentation.viewModel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -78,6 +90,12 @@ fun LoginScreen(
     val isDarkTheme by settingsViewModel.themeState.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
+
+    var showPhoneDialog by remember { mutableStateOf(false) }
+    var googleIdTokenForDialog by remember { mutableStateOf("") }
+    var googlePhoneNumber by remember { mutableStateOf("") }
 
     LaunchedEffect(authState) {
         when (authState) {
@@ -89,8 +107,58 @@ fun LoginScreen(
                 Toast.makeText(context, (authState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
                 authViewModel.resetState()
             }
+            is AuthUiState.NeedPhone -> {
+                googleIdTokenForDialog = (authState as AuthUiState.NeedPhone).idToken
+                showPhoneDialog = true
+            }
             else -> {}
         }
+    }
+
+    if (showPhoneDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showPhoneDialog = false
+                authViewModel.resetState()
+            },
+            title = { Text(text = "Введите номер телефона", fontFamily = myTypeFamily) },
+            text = {
+                Column {
+                    Text(text = "Для завершения регистрации через Google необходимо указать номер телефона.", fontFamily = myTypeFamily)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = googlePhoneNumber,
+                        onValueChange = { googlePhoneNumber = it },
+                        label = { Text("Номер телефона", fontFamily = myTypeFamily) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (googlePhoneNumber.isNotBlank()) {
+                            showPhoneDialog = false
+                            authViewModel.googleAuth(googleIdTokenForDialog, googlePhoneNumber)
+                        } else {
+                            Toast.makeText(context, "Введите номер", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Подтвердить", fontFamily = myTypeFamily)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showPhoneDialog = false
+                    authViewModel.resetState()
+                }) {
+                    Text("Отмена", fontFamily = myTypeFamily)
+                }
+            }
+        )
     }
 
     Column(
@@ -224,6 +292,8 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        val googleClientId = stringResource(id = R.string.default_web_client_id)
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -232,7 +302,52 @@ fun LoginScreen(
                 .border(1.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(16.dp))
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .clickable { /* TODO */ },
+                .clickable {
+                    Log.d("GoogleAuth", "Starting Google Sign-In with ClientID: $googleClientId")
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(googleClientId)
+                        .setAutoSelectEnabled(false)
+                        .build()
+
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+
+                    scope.launch {
+                        try {
+                            val result = credentialManager.getCredential(
+                                context = context,
+                                request = request
+                            )
+                            val credential = result.credential
+                            Log.d("GoogleAuth", "Got credential: ${credential.type}")
+                            
+                            // Извлекаем токен через статический метод createFrom
+                            if (credential is CustomCredential && 
+                                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                
+                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                val idToken = googleIdTokenCredential.idToken
+                                Log.d("GoogleAuth", "ID Token: ${idToken.take(20)}...")
+                                authViewModel.googleAuth(idToken)
+                                
+                            } else if (credential is GoogleIdTokenCredential) {
+                                val idToken = credential.idToken
+                                Log.d("GoogleAuth", "ID Token (direct): ${idToken.take(20)}...")
+                                authViewModel.googleAuth(idToken)
+                            } else {
+                                Log.e("GoogleAuth", "Unexpected credential type: ${credential.type}")
+                            }
+                        } catch (e: GetCredentialException) {
+                            Log.e("GoogleAuth", "GetCredentialException: ${e.type} - ${e.message}")
+                            Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            Log.e("GoogleAuth", "Unknown error", e)
+                            Toast.makeText(context, "Произошла неизвестная ошибка", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -71,6 +71,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material)
 
+    // Google Auth & Credentials
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
     // Retrofit & Networking
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.gson)
