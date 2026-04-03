@@ -20,6 +20,8 @@ coil_version = "3.3.0"
 animation = "1.10.3"
 hiltAndroid = "2.59.2"
 hiltNavigationCompose = "1.3.0"
+retrofit = "2.11.0"
+okhttp = "4.12.0"
 
 
 [libraries]
@@ -52,6 +54,9 @@ androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", ve
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp" , version.ref = "ksp"}

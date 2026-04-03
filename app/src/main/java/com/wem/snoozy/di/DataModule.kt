@@ -6,8 +6,10 @@ import com.wem.snoozy.data.local.AlarmDatabase
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.data.repository.AlarmRepositoryImpl
+import com.wem.snoozy.data.repository.AuthRepositoryImpl
 import com.wem.snoozy.data.repository.ContactRepositoryImpl
 import com.wem.snoozy.domain.repository.AlarmRepository
+import com.wem.snoozy.domain.repository.AuthRepository
 import com.wem.snoozy.domain.repository.ContactRepository
 import dagger.Binds
 import dagger.Module
@@ -28,6 +30,10 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindContactRepository(impl: ContactRepositoryImpl): ContactRepository
+
+    @Binds
+    @Singleton
+    fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
     companion object {
 

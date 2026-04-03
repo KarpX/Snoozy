@@ -1,12 +1,12 @@
 package com.wem.snoozy.data.local
 
 import android.content.Context
-import androidx.core.text.isDigitsOnly
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore(name = "user_preferences")
@@ -16,10 +16,10 @@ class UserPreferencesManager(
 ) {
 
     companion object {
-
         val SLEEP_START_TIME = stringPreferencesKey("sleep_start_time")
         val CYCLE_LENGTH = stringPreferencesKey("cycle_length")
         val DARK_THEME_KEY = booleanPreferencesKey("dark_theme")
+        val ACCESS_TOKEN = stringPreferencesKey("access_token")
     }
 
     val sleepStartTimeFlow: Flow<String> = context.dataStore.data
@@ -35,6 +35,11 @@ class UserPreferencesManager(
     val darkThemeFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[DARK_THEME_KEY] ?: true
+        }
+
+    val accessTokenFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[ACCESS_TOKEN]
         }
 
     suspend fun saveSleepStartTime(time: String) {
@@ -53,6 +58,22 @@ class UserPreferencesManager(
         context.dataStore.edit { preferences ->
             preferences[DARK_THEME_KEY] = isDark
         }
+    }
+
+    suspend fun saveAccessToken(token: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCESS_TOKEN] = token
+        }
+    }
+
+    suspend fun clearAccessToken() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(ACCESS_TOKEN)
+        }
+    }
+
+    suspend fun hasToken(): Boolean {
+        return accessTokenFlow.first() != null
     }
 
     suspend fun clearAll() {

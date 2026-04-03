@@ -1,5 +1,6 @@
 package com.wem.snoozy.presentation.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,28 +45,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.wem.snoozy.R
 import com.wem.snoozy.presentation.itemCard.myTypeFamily
+import com.wem.snoozy.presentation.viewModel.AuthUiState
+import com.wem.snoozy.presentation.viewModel.AuthViewModel
 import com.wem.snoozy.ui.theme.SnoozyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationScreen(
     onBackClick: () -> Unit = {},
-    onRegistrationSuccess: () -> Unit = {}
+    onRegistrationSuccess: () -> Unit = {},
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
-
     var username by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val authState by authViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthUiState.Success -> {
+                onRegistrationSuccess()
+                authViewModel.resetState()
+            }
+            is AuthUiState.Error -> {
+                Toast.makeText(context, (authState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
+                authViewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -113,7 +138,8 @@ fun RegistrationScreen(
                     onValueChange = { username = it },
                     placeholder = "Имя пользователя",
                     leadingIcon = Icons.Default.Person,
-                    keyboardType = KeyboardType.Text
+                    keyboardType = KeyboardType.Text,
+                    enabled = authState !is AuthUiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -123,7 +149,8 @@ fun RegistrationScreen(
                     onValueChange = { phone = it },
                     placeholder = "+123456789",
                     leadingIcon = Icons.Default.Phone,
-                    keyboardType = KeyboardType.Phone
+                    keyboardType = KeyboardType.Phone,
+                    enabled = authState !is AuthUiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -135,7 +162,8 @@ fun RegistrationScreen(
                     leadingIcon = Icons.Default.Lock,
                     isPassword = true,
                     passwordVisible = passwordVisible,
-                    onPasswordToggle = { passwordVisible = !passwordVisible }
+                    onPasswordToggle = { passwordVisible = !passwordVisible },
+                    enabled = authState !is AuthUiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -147,13 +175,15 @@ fun RegistrationScreen(
                     leadingIcon = Icons.Default.Lock,
                     isPassword = true,
                     passwordVisible = passwordVisible,
-                    onPasswordToggle = { passwordVisible = !passwordVisible }
+                    onPasswordToggle = { passwordVisible = !passwordVisible },
+                    enabled = authState !is AuthUiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
-                    onClick = { onRegistrationSuccess() },
+                    onClick = { authViewModel.register(username, phone, password, confirmPassword) },
+                    enabled = authState !is AuthUiState.Loading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp)
@@ -165,29 +195,33 @@ fun RegistrationScreen(
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Создать",
-                            fontSize = 24.sp,
-                            fontFamily = myTypeFamily,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onPrimaryFixed
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                                .align(Alignment.CenterEnd),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_back_arrow),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryFixed,
-                                modifier = Modifier.size(24.dp).rotate(180f)
+                        if (authState is AuthUiState.Loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                text = "Создать",
+                                fontSize = 24.sp,
+                                fontFamily = myTypeFamily,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryFixed
                             )
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .align(Alignment.CenterEnd),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_back_arrow),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryFixed,
+                                    modifier = Modifier.size(24.dp).rotate(180f)
+                                )
+                            }
                         }
                     }
                 }
@@ -258,13 +292,5 @@ fun RegistrationScreen(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegistrationScreenPreview() {
-    SnoozyTheme() {
-        RegistrationScreen()
     }
 }

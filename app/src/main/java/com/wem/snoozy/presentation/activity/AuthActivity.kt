@@ -9,15 +9,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.presentation.navigation.Screen
 import com.wem.snoozy.presentation.screen.LoginScreen
 import com.wem.snoozy.presentation.screen.RegistrationScreen
@@ -33,6 +36,15 @@ class AuthActivity : ComponentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeState by settingsViewModel.themeState.collectAsState()
+            val context = LocalContext.current
+
+            // Проверка наличия токена при запуске
+            LaunchedEffect(Unit) {
+                val userPrefs = UserPreferencesManager(context)
+                if (userPrefs.hasToken()) {
+                    navigateToMain()
+                }
+            }
 
             SnoozyTheme(darkTheme = themeState) {
                 val window = (LocalView.current.context as Activity).window
