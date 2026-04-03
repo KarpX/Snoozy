@@ -24,9 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wem.snoozy.R
+import com.wem.snoozy.ui.theme.SnoozyTheme
 import com.wem.snoozy.ui.theme.TaupeGray
 
 @Composable
@@ -36,50 +41,73 @@ fun MissedAlarmItem(name: String, time: String) {
             .fillMaxWidth()
             .shadow(2.dp, RoundedCornerShape(20))
             .clip(RoundedCornerShape(16.dp))
-            .background(color = MaterialTheme.colorScheme.primaryFixed)
-            .padding(8.dp),
+            .background(color = MaterialTheme.colorScheme.onPrimaryFixed),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = name,
-            fontFamily = myTypeFamily,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.secondaryFixed,
-            modifier = Modifier.weight(1f),
-            fontSize = 14.sp
-        )
-        Text(
-            text = time,
-            fontFamily = myTypeFamily,
-            color = MaterialTheme.colorScheme.secondaryFixed.copy(alpha = 0.8f),
-            modifier = Modifier.padding(horizontal = 8.dp),
-            fontSize = 13.sp
-        )
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .shadow(1.dp, RoundedCornerShape(50))
-                .clip(RoundedCornerShape(50))
-                .background(color = MaterialTheme.colorScheme.onPrimaryFixed)
-                .clickable {
-                    // TODO call to friend
-                },
-            contentAlignment = Alignment.Center
-        ){
-            Icon(
-                imageVector = Icons.Default.PhoneInTalk,
-                contentDescription = "Send alarm",
-                tint = MaterialTheme.colorScheme.secondaryFixed,
+                .clip(RoundedCornerShape(16.dp))
+                .background(color = MaterialTheme.colorScheme.secondaryFixed)
+                .padding(8.dp)
+                .weight(2f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = name,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryFixed,
+                modifier = Modifier.weight(1f),
+                fontSize = 14.sp
+            )
+            Text(
+                text = time,
+                fontFamily = myTypeFamily,
+                color = MaterialTheme.colorScheme.onPrimaryFixed.copy(alpha = 0.8f),
+                modifier = Modifier.padding(horizontal = 8.dp),
+                fontSize = 13.sp
             )
         }
+        Box(
+            modifier = Modifier
+                .weight(0.5f),
+            contentAlignment = Alignment.Center
+        ){
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(color = MaterialTheme.colorScheme.onBackground)
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        // TODO call to friend
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_phone_call),
+                    contentDescription = "Send alarm",
+                    tint = MaterialTheme.colorScheme.onPrimaryFixed,
+                    modifier = Modifier
+                        .size(24.dp)
+                )
+            }
+        }
+
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MissedAlarmItemPreview() {
+    SnoozyTheme() {
+        MissedAlarmItem("Alex", "07:30")
     }
 }
