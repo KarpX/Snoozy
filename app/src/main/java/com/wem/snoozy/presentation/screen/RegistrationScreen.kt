@@ -121,6 +121,7 @@ fun RegistrationScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(bottom = paddingValues.calculateBottomPadding())
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(

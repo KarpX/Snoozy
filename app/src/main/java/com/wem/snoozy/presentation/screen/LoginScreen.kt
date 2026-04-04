@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -103,28 +104,38 @@ fun LoginScreen(
                 onLoginSuccess()
                 authViewModel.resetState()
             }
+
             is AuthUiState.Error -> {
-                Toast.makeText(context, (authState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    (authState as AuthUiState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
                 authViewModel.resetState()
             }
+
             is AuthUiState.NeedPhone -> {
                 googleIdTokenForDialog = (authState as AuthUiState.NeedPhone).idToken
                 showPhoneDialog = true
             }
+
             else -> {}
         }
     }
 
     if (showPhoneDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showPhoneDialog = false
                 authViewModel.resetState()
             },
             title = { Text(text = "Введите номер телефона", fontFamily = myTypeFamily) },
             text = {
                 Column {
-                    Text(text = "Для завершения регистрации через Google необходимо указать номер телефона.", fontFamily = myTypeFamily)
+                    Text(
+                        text = "Для завершения регистрации через Google необходимо указать номер телефона.",
+                        fontFamily = myTypeFamily
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = googlePhoneNumber,
@@ -151,7 +162,7 @@ fun LoginScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { 
+                TextButton(onClick = {
                     showPhoneDialog = false
                     authViewModel.resetState()
                 }) {
@@ -161,233 +172,262 @@ fun LoginScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
+    Scaffold(
 
-        Icon(
-            painter = painterResource(id = if (isDarkTheme) R.drawable.ic_snoozy_logo_dark_theme else R.drawable.ic_snoozy_logo),
-            contentDescription = "Snoozy Logo",
-            tint = Color.Unspecified,
-            modifier = Modifier.size(412.dp, 190.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Войти в аккаунт",
-            fontSize = 28.sp,
-            fontFamily = myTypeFamily,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.tertiary,
-            textAlign = TextAlign.Center,
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        LoginTextField(
-            value = phone,
-            onValueChange = { phone = it },
-            placeholder = "+123456789",
-            leadingIcon = Icons.Default.Phone,
-            keyboardType = KeyboardType.Phone,
-            enabled = authState !is AuthUiState.Loading
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LoginTextField(
-            value = password,
-            onValueChange = { password = it },
-            placeholder = "Введите пароль",
-            leadingIcon = Icons.Default.Lock,
-            isPassword = true,
-            passwordVisible = passwordVisible,
-            onPasswordToggle = { passwordVisible = !passwordVisible },
-            enabled = authState !is AuthUiState.Loading
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = innerPadding.calculateTopPadding())
+                .padding(bottom = innerPadding.calculateBottomPadding()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Забыли пароль?",
-                fontSize = 16.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primaryFixed,
-                modifier = Modifier.clickable { /* TODO */ }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Icon(
+                painter = painterResource(id = if (isDarkTheme) R.drawable.ic_snoozy_logo_dark_theme else R.drawable.ic_snoozy_logo),
+                contentDescription = "Snoozy Logo",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(412.dp, 190.dp)
             )
-        }
 
-        Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = { authViewModel.login(phone, password) },
-            enabled = authState !is AuthUiState.Loading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(horizontal = 8.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.onBackground
-            ),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (authState is AuthUiState.Loading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text(
-                        text = "Войти",
-                        fontSize = 24.sp,
-                        fontFamily = myTypeFamily,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onPrimaryFixed
-                    )
+            Text(
+                text = "Войти в аккаунт",
+                fontSize = 28.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.tertiary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            )
 
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .align(Alignment.CenterEnd),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_back_arrow),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryFixed,
-                            modifier = Modifier.size(24.dp).rotate(180f)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            LoginTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                placeholder = "+123456789",
+                leadingIcon = Icons.Default.Phone,
+                keyboardType = KeyboardType.Phone,
+                enabled = authState !is AuthUiState.Loading
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LoginTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = "Введите пароль",
+                leadingIcon = Icons.Default.Lock,
+                isPassword = true,
+                passwordVisible = passwordVisible,
+                onPasswordToggle = { passwordVisible = !passwordVisible },
+                enabled = authState !is AuthUiState.Loading
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Забыли пароль?",
+                    fontSize = 16.sp,
+                    fontFamily = myTypeFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primaryFixed,
+                    modifier = Modifier.clickable { /* TODO */ }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(64.dp))
+
+            Button(
+                onClick = { authViewModel.login(phone, password) },
+                enabled = authState !is AuthUiState.Loading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground
+                ),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (authState is AuthUiState.Loading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
+                    } else {
+                        Text(
+                            text = "Войти",
+                            fontSize = 24.sp,
+                            fontFamily = myTypeFamily,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimaryFixed
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .align(Alignment.CenterEnd),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_back_arrow),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryFixed,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .rotate(180f)
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "или",
-            fontSize = 18.sp,
-            fontFamily = myTypeFamily,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)
-        )
+            Text(
+                text = "или",
+                fontSize = 18.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        val googleClientId = stringResource(id = R.string.default_web_client_id)
+            val googleClientId = stringResource(id = R.string.default_web_client_id)
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 8.dp)
-                .border(1.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable {
-                    Log.d("GoogleAuth", "Starting Google Sign-In with ClientID: $googleClientId")
-                    val googleIdOption = GetGoogleIdOption.Builder()
-                        .setFilterByAuthorizedAccounts(false)
-                        .setServerClientId(googleClientId)
-                        .setAutoSelectEnabled(false)
-                        .build()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .padding(horizontal = 8.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable {
+                        Log.d(
+                            "GoogleAuth",
+                            "Starting Google Sign-In with ClientID: $googleClientId"
+                        )
+                        val googleIdOption = GetGoogleIdOption.Builder()
+                            .setFilterByAuthorizedAccounts(false)
+                            .setServerClientId(googleClientId)
+                            .setAutoSelectEnabled(false)
+                            .build()
 
-                    val request = GetCredentialRequest.Builder()
-                        .addCredentialOption(googleIdOption)
-                        .build()
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(googleIdOption)
+                            .build()
 
-                    scope.launch {
-                        try {
-                            val result = credentialManager.getCredential(
-                                context = context,
-                                request = request
-                            )
-                            val credential = result.credential
-                            Log.d("GoogleAuth", "Got credential: ${credential.type}")
-                            
-                            // Извлекаем токен через статический метод createFrom
-                            if (credential is CustomCredential && 
-                                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                                
-                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                                val idToken = googleIdTokenCredential.idToken
-                                Log.d("GoogleAuth", "ID Token: ${idToken.take(20)}...")
-                                authViewModel.googleAuth(idToken)
-                                
-                            } else if (credential is GoogleIdTokenCredential) {
-                                val idToken = credential.idToken
-                                Log.d("GoogleAuth", "ID Token (direct): ${idToken.take(20)}...")
-                                authViewModel.googleAuth(idToken)
-                            } else {
-                                Log.e("GoogleAuth", "Unexpected credential type: ${credential.type}")
+                        scope.launch {
+                            try {
+                                val result = credentialManager.getCredential(
+                                    context = context,
+                                    request = request
+                                )
+                                val credential = result.credential
+                                Log.d("GoogleAuth", "Got credential: ${credential.type}")
+
+                                // Извлекаем токен через статический метод createFrom
+                                if (credential is CustomCredential &&
+                                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                                ) {
+
+                                    val googleIdTokenCredential =
+                                        GoogleIdTokenCredential.createFrom(credential.data)
+                                    val idToken = googleIdTokenCredential.idToken
+                                    Log.d("GoogleAuth", "ID Token: ${idToken.take(20)}...")
+                                    authViewModel.googleAuth(idToken)
+
+                                } else if (credential is GoogleIdTokenCredential) {
+                                    val idToken = credential.idToken
+                                    Log.d("GoogleAuth", "ID Token (direct): ${idToken.take(20)}...")
+                                    authViewModel.googleAuth(idToken)
+                                } else {
+                                    Log.e(
+                                        "GoogleAuth",
+                                        "Unexpected credential type: ${credential.type}"
+                                    )
+                                }
+                            } catch (e: GetCredentialException) {
+                                Log.e(
+                                    "GoogleAuth",
+                                    "GetCredentialException: ${e.type} - ${e.message}"
+                                )
+                                Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG)
+                                    .show()
+                            } catch (e: Exception) {
+                                Log.e("GoogleAuth", "Unknown error", e)
+                                Toast.makeText(
+                                    context,
+                                    "Произошла неизвестная ошибка",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        } catch (e: GetCredentialException) {
-                            Log.e("GoogleAuth", "GetCredentialException: ${e.type} - ${e.message}")
-                            Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
-                        } catch (e: Exception) {
-                            Log.e("GoogleAuth", "Unknown error", e)
-                            Toast.makeText(context, "Произошла неизвестная ошибка", Toast.LENGTH_SHORT).show()
                         }
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_google),
-                    contentDescription = null,
-                    tint = Color.Unspecified
-                )
-                Spacer(modifier = Modifier.width(16.dp))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_google),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Вход через Google",
+                        fontSize = 16.sp,
+                        fontFamily = myTypeFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Row(
+                modifier = Modifier.padding(bottom = 32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "Вход через Google",
+                    text = "Нет аккаунта? ",
                     fontSize = 16.sp,
                     fontFamily = myTypeFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+                Text(
+                    text = "Зарегистрироваться",
+                    fontSize = 16.sp,
+                    fontFamily = myTypeFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primaryFixed,
+                    modifier = Modifier.clickable { onRegisterClick() }
                 )
             }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Row(
-            modifier = Modifier.padding(bottom = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Нет аккаунта? ",
-                fontSize = 16.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            Text(
-                text = "Зарегистрироваться",
-                fontSize = 16.sp,
-                fontFamily = myTypeFamily,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primaryFixed,
-                modifier = Modifier.clickable { onRegisterClick() }
-            )
         }
     }
 }
@@ -407,7 +447,9 @@ fun LoginTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
         enabled = enabled,
         placeholder = {
             Text(
@@ -429,7 +471,7 @@ fun LoginTextField(
             {
                 IconButton(onClick = onPasswordToggle) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, 
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
                     )
