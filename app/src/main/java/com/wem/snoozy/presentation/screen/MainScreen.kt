@@ -64,7 +64,6 @@ import com.wem.snoozy.R
 import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.CycleItem
 import com.wem.snoozy.presentation.itemCard.CycleItemCard
-import com.wem.snoozy.presentation.itemCard.myTypeFamily
 import com.wem.snoozy.presentation.utils.DatePickerDialog
 import com.wem.snoozy.presentation.utils.SwipeToDeleteAlarmItem
 import com.wem.snoozy.presentation.utils.TimePickerDialog
@@ -377,8 +376,7 @@ fun BottomSheetContentAdd(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         when (currentState) {
-            AddAlarmState.Initial -> {
-            }
+            AddAlarmState.Initial -> {}
 
             is AddAlarmState.Content -> {
                 AlarmTime(
@@ -413,7 +411,9 @@ fun BottomSheetContentAdd(
                                         .padStart(2, '0')
                                             + ":" + currentState.selectedTime.minute.toString()
                                         .padStart(2, '0'),
-                                    timeToBed = if (selectedCycleId.value != -1) currentState.cyclesList.first().time else "",
+                                    timeToBed = if (selectedCycleId.value != -1) {
+                                        currentState.cyclesList.find { it.id == selectedCycleId.value }?.time ?: ""
+                                    } else "",
                                     checked = true,
                                     repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() }
                                 )
@@ -424,9 +424,7 @@ fun BottomSheetContentAdd(
                 )
             }
 
-            AddAlarmState.Loading -> {
-
-            }
+            AddAlarmState.Loading -> {}
         }
     }
 }
@@ -494,8 +492,7 @@ fun BottomSheetContentEdit(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         when (currentState) {
-            EditAlarmState.Initial -> {
-            }
+            EditAlarmState.Initial -> {}
 
             is EditAlarmState.Content -> {
                 AlarmTime(
@@ -530,9 +527,11 @@ fun BottomSheetContentEdit(
                                         .padStart(2, '0')
                                             + ":" + currentState.selectedTime.minute.toString()
                                         .padStart(2, '0'),
-                                    timeToBed = if (selectedCycleId.value != -1) currentState.cyclesList.first().time else "",
+                                    timeToBed = if (selectedCycleId.value != -1) {
+                                        currentState.cyclesList.find { it.id == selectedCycleId.value }?.time ?: ""
+                                    } else "",
                                     checked = true,
-                                    repeatDays = ""
+                                    repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() }
                                 )
                             )
                         )
@@ -542,8 +541,6 @@ fun BottomSheetContentEdit(
             }
 
             EditAlarmState.Loading -> {}
-            AddAlarmState.Initial -> {}
-            AddAlarmState.Loading -> {}
         }
     }
 }
@@ -569,7 +566,6 @@ fun BottomSheetCancelAndSave(
             Text(
                 stringResource(R.string.cancel),
                 fontSize = 16.sp,
-                fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
                 color = Color.White
             )
@@ -590,7 +586,6 @@ fun BottomSheetCancelAndSave(
             Text(
                 "Сохранить",
                 fontSize = 16.sp,
-                fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
                 color = Color.Black
             )
@@ -611,7 +606,6 @@ fun AlarmDate(
         Text(
             text = "Будильник сработает:",
             fontSize = 16.sp,
-            fontFamily = myTypeFamily,
             fontWeight = FontWeight(900),
             color = MaterialTheme.colorScheme.tertiary
         )
@@ -634,7 +628,6 @@ fun AlarmDate(
                 Text(
                     formatDateWithRelative(selectedDate),
                     fontSize = 20.sp,
-                    fontFamily = myTypeFamily,
                     fontWeight = FontWeight(900),
                     color = MaterialTheme.colorScheme.tertiary
                 )
@@ -667,7 +660,6 @@ fun AlarmTime(
         Text(
             ":",
             fontSize = 60.sp,
-            fontFamily = myTypeFamily,
             fontWeight = FontWeight(900),
             color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -699,7 +691,6 @@ fun TimeCard(
             Text(
                 text = time,
                 fontSize = fontSize,
-                fontFamily = myTypeFamily,
                 fontWeight = FontWeight(900),
                 color = MaterialTheme.colorScheme.tertiary,
             )
@@ -746,7 +737,6 @@ fun WeekDaysRow(
                 Text(
                     it.name,
                     fontSize = 20.sp,
-                    fontFamily = myTypeFamily,
                     fontWeight = FontWeight(900),
                     color = MaterialTheme.colorScheme.tertiary,
                 )
@@ -766,8 +756,9 @@ fun CycleTable(
     val listState = rememberLazyListState()
 
     LaunchedEffect(cycles) {
-        if (cycles.firstOrNull()?.checked == true) {
-            listState.animateScrollToItem(0)
+        val selectedIndex = cycles.indexOfFirst { it.checked }
+        if (selectedIndex != -1) {
+            listState.animateScrollToItem(selectedIndex)
         }
     }
 

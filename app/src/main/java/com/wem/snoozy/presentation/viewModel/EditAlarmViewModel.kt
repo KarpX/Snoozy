@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wem.snoozy.data.local.UserPreferencesManager
-import com.wem.snoozy.data.repository.AlarmRepositoryImpl
 import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.CycleItem
 import com.wem.snoozy.domain.entity.DayItem
@@ -23,12 +22,6 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
-
-/**
- * ViewModel for edit alarms screen
- *
- * @param alarmItem editing alarm item
- */
 @HiltViewModel(
     assistedFactory = EditAlarmViewModel.Factory::class
 )
@@ -41,7 +34,6 @@ class EditAlarmViewModel @AssistedInject constructor(
     private val cycleLength = MutableStateFlow(INIT_CYCLE_LENGTH)
     private val sleepStartTime = MutableStateFlow(INIT_SLEEP_START_TIME)
 
-    // Edit alarm screen state
     private val _state = MutableStateFlow<EditAlarmState>(EditAlarmState.Initial)
     val editState = _state.asStateFlow()
 
@@ -69,26 +61,40 @@ class EditAlarmViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cycleLength.value = userPreferencesManager.cycleLengthFlow.first()
             sleepStartTime.value = userPreferencesManager.sleepStartTimeFlow.first()
-            applyCyclesList(
-                LocalTime.of(
-                    alarmItem.ringHours.split(":")[0].toInt(),
-                    alarmItem.ringHours.split(":")[1].toInt(),
-                )
-            )
+            
+            val alarmTime = LocalTime.parse(alarmItem.ringHours)
+            
+            // Парсим дни повтора
+            val repeatedDaysIds = alarmItem.repeatDays.split(",")
+                .filter { it.isNotEmpty() }
+                .map { it.toInt() }
+            
+            val updatedDaysList = initDaysList.map { 
+                if (it.id in repeatedDaysIds) it.copy(checked = true) else it 
+            }
+            _daysList.value = updatedDaysList
+
+            applyCyclesList(alarmTime)
+            
+            // Отмечаем выбранный цикл, если он есть
+            val updatedCycles = _cyclesList.value.map {
+                if (it.time == alarmItem.timeToBed) {
+                    editSelectedCycleId.value = it.id
+                    it.copy(checked = true)
+                } else it
+            }
+            _cyclesList.value = updatedCycles
+
             _state.value = EditAlarmState.Content(
-                selectedTime = LocalTime.of(
-                    alarmItem.ringHours.split(":")[0].toInt(),
-                    alarmItem.ringHours.split(":")[1].toInt(),
-                ),
+                selectedTime = alarmTime,
                 cyclesList = _cyclesList.value,
-                daysList = initDaysList,
+                daysList = _daysList.value,
                 selectedDate = alarmItem.ringDay.formatStringToDate()
             )
         }
     }
 
     private fun toggleDay(id: Int) {
-        Log.d("CyclesEdit", "toggle day")
         val currentList = _daysList.value.toMutableList()
         currentList.replaceAll { if (it.id == id) it.copy(checked = !it.checked) else it }
         _daysList.value = currentList
@@ -96,18 +102,16 @@ class EditAlarmViewModel @AssistedInject constructor(
 
     private fun toggleCycle(id: Int) {
         val currentList = _cyclesList.value.toMutableList()
-        if (currentList.find { it.checked && it.id == id } != null) {
-            currentList.replaceAll { it.copy(checked = false) }
-            Log.d("CyclesEdit", "All cycles unchecked")
-            editSelectedCycleId.value = -1
-        } else if (currentList.find { it.checked && it.id != id } != null) {
-            currentList.replaceAll { it.copy(checked = false) }
-            currentList.replaceAll { if (it.id == id) it.copy(checked = !it.checked) else it }
+        val target = currentList.find { it.id == id }
+        
+        currentList.replaceAll { it.copy(checked = false) }
+        if (target != null && editSelectedCycleId.value != id) {
+            currentList.replaceAll { if (it.id == id) it.copy(checked = true) else it }
             editSelectedCycleId.value = id
         } else {
-            currentList.replaceAll { if (it.id == id) it.copy(checked = !it.checked) else it }
-            editSelectedCycleId.value = id
+            editSelectedCycleId.value = -1
         }
+        
         _cyclesList.value = currentList.sortedWith(
             compareByDescending<CycleItem> { it.checked }
                 .thenByDescending { it.id }
@@ -115,7 +119,6 @@ class EditAlarmViewModel @AssistedInject constructor(
     }
 
     private fun applyCyclesList(selectedTime: LocalTime) {
-        Log.d("AddAlarm", "apply work ")
         var currentTime = selectedTime
         val newItems = mutableListOf<CycleItem>()
 
@@ -130,13 +133,6 @@ class EditAlarmViewModel @AssistedInject constructor(
             newItems.add(cycleItem)
             currentTime = currentTime.minusMinutes(cycleLength.value.toLong())
         }
-
-        if (_cyclesList.value.isNotEmpty() && newItems.toSet() == _cyclesList.value.map {
-                it.copy(checked = false)
-            }.toSet()) {
-            return
-        }
-
         _cyclesList.value = newItems.sortedByDescending { it.id }.toMutableList()
     }
 
@@ -147,58 +143,35 @@ class EditAlarmViewModel @AssistedInject constructor(
                     editAlarmUseCase(command.alarmItem)
                 }
             }
-
             is EditAlarmCommand.SelectCycle -> {
                 _state.update { prevState ->
                     toggleCycle(command.cycleId)
                     if (prevState is EditAlarmState.Content) {
-                        prevState.copy(
-                            cyclesList = _cyclesList.value
-                        )
-                    } else {
-                        prevState
-                    }
+                        prevState.copy(cyclesList = _cyclesList.value)
+                    } else prevState
                 }
             }
-
             is EditAlarmCommand.SelectDate -> {
                 _state.update { prevState ->
                     if (prevState is EditAlarmState.Content) {
-                        prevState.copy(
-                            selectedDate = command.date,
-                        )
-                    } else {
-                        prevState
-                    }
+                        prevState.copy(selectedDate = command.date)
+                    } else prevState
                 }
             }
-
             is EditAlarmCommand.SelectDay -> {
                 _state.update { prevState ->
                     toggleDay(command.id)
                     if (prevState is EditAlarmState.Content) {
-                        prevState.copy(
-                            daysList = _daysList.value
-                        ).also {
-                            Log.d("CyclesEdit", _daysList.value.toString())
-                        }
-                    } else {
-                        prevState
-                    }
+                        prevState.copy(daysList = _daysList.value)
+                    } else prevState
                 }
             }
-
             is EditAlarmCommand.SelectTime -> {
                 _state.update { prevState ->
                     applyCyclesList(command.time)
                     if (prevState is EditAlarmState.Content) {
-                        prevState.copy(
-                            selectedTime = command.time,
-                            cyclesList = _cyclesList.value
-                        )
-                    } else {
-                        prevState
-                    }
+                        prevState.copy(selectedTime = command.time, cyclesList = _cyclesList.value)
+                    } else prevState
                 }
             }
         }
@@ -206,56 +179,31 @@ class EditAlarmViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-
-        fun create(
-            @Assisted("alarmItem") alarmItem: AlarmItem
-        ): EditAlarmViewModel
+        fun create(@Assisted("alarmItem") alarmItem: AlarmItem): EditAlarmViewModel
     }
 
     companion object {
-
         const val INIT_CYCLE_LENGTH = "-1"
         const val INIT_SLEEP_START_TIME = "-1"
-
         const val INIT_SELECTED_ITEM_ID = -1
     }
 }
 
 sealed interface EditAlarmCommand {
-
-    data class EditAlarm(
-        val alarmItem: AlarmItem
-    ) : EditAlarmCommand
-
-    data class SelectCycle(
-        val cycleId: Int
-    ) : EditAlarmCommand
-
-    data class SelectTime(
-        val time: LocalTime
-    ) : EditAlarmCommand
-
-    data class SelectDay(
-        val id: Int
-    ) : EditAlarmCommand
-
-    data class SelectDate(
-        val date: LocalDate
-    ) : EditAlarmCommand
+    data class EditAlarm(val alarmItem: AlarmItem) : EditAlarmCommand
+    data class SelectCycle(val cycleId: Int) : EditAlarmCommand
+    data class SelectTime(val time: LocalTime) : EditAlarmCommand
+    data class SelectDay(val id: Int) : EditAlarmCommand
+    data class SelectDate(val date: LocalDate) : EditAlarmCommand
 }
 
 sealed interface EditAlarmState {
-
     data object Initial : EditAlarmState
-
-
     data class Content(
         val selectedTime: LocalTime,
         val selectedDate: LocalDate,
         val daysList: List<DayItem>,
         val cyclesList: List<CycleItem>
     ) : EditAlarmState
-
-
     data object Loading : EditAlarmState
 }

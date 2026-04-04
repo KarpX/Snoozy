@@ -1,12 +1,13 @@
 package com.wem.snoozy.presentation.itemCard
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -97,14 +99,32 @@ fun AlarmItemCard(
         ) {
             Row(
                 modifier = modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = alarmItem.ringDay,
-                    fontSize = 20.sp,
-                    fontFamily = myTypeFamily,
-                    color = cardType
-                )
+                Column() {
+                    if (alarmItem.isOverslept) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.Red.copy(alpha = 0.8f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "ПРОСПАЛИ",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                    Text(
+                        text = alarmItem.ringDay,
+                        fontSize = 20.sp,
+                        fontFamily = myTypeFamily,
+                        color = cardType
+                    )
+                }
                 Text(
                     text = textTimeToBed,
                     fontSize = 20.sp,
@@ -153,6 +173,6 @@ fun AlarmItemCard(
 @Composable
 fun AlarmItemCardPreview() {
     SnoozyTheme(darkTheme = false) {
-        AlarmItemCard(alarmItem = AlarmItem(0, "Monday", "7:00", "22:00", checked = false, ""))
+        AlarmItemCard(alarmItem = AlarmItem(0, "Monday", "7:00", "22:00", checked = false, "", isOverslept = true))
     }
 }
