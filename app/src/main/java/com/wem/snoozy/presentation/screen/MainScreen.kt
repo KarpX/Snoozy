@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -111,7 +112,8 @@ fun MainScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         when (currentState) {
-            MainState.Initial -> {}
+            MainState.Initial -> {
+            }
 
             is MainState.Content -> {
                 AlarmsList(
@@ -268,31 +270,48 @@ fun AlarmsList(
     onToggleAlarm: (AlarmItem) -> Unit,
     onEditClick: (AlarmItem) -> Unit
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(top = 16.dp)
-    ) {
-        items(
-            alarms,
-            key = { it.id }
-        ) { alarm ->
-            Box(
-                modifier = Modifier.animateItem()
-            ) {
-                SwipeToDeleteAlarmItem(
-                    alarmItem = alarm,
-                    onDelete = { onDeleteSwipe(alarm.id) },
-                    onToggle = { onToggleAlarm(alarm) },
-                    onEditClick = { onEditClick(alarm) }
+    if (alarms.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "У вас пока нет\nбудильников",
+                fontSize = 20.sp,
+                fontFamily = myTypeFamily,
+                fontWeight = FontWeight(900),
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f),
+                textAlign = TextAlign.Center,
+                lineHeight = 28.sp
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(top = 16.dp)
+        ) {
+            items(
+                alarms,
+                key = { it.id }
+            ) { alarm ->
+                Box(
+                    modifier = Modifier.animateItem()
+                ) {
+                    SwipeToDeleteAlarmItem(
+                        alarmItem = alarm,
+                        onDelete = { onDeleteSwipe(alarm.id) },
+                        onToggle = { onToggleAlarm(alarm) },
+                        onEditClick = { onEditClick(alarm) }
+                    )
+                }
+            }
+            item {
+                Box(
+                    modifier = Modifier
+                        .height(200.dp)
+                        .background(Color.Transparent)
                 )
             }
-        }
-        item {
-            Box(
-                modifier = Modifier
-                    .height(200.dp)
-                    .background(Color.Transparent)
-            )
         }
     }
 }

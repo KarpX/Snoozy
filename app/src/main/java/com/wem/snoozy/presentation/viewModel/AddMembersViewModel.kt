@@ -1,0 +1,136 @@
+package com.wem.snoozy.presentation.viewModel
+
+import android.content.Context
+import android.net.Uri
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.wem.snoozy.domain.entity.ContactItem
+import com.wem.snoozy.domain.entity.GroupItem
+import com.wem.snoozy.domain.repository.AlarmRepository
+import com.wem.snoozy.domain.repository.ContactRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import javax.inject.Inject
+
+data class AddMembersState(
+    val contacts: List<ContactItem> = emptyList(),
+    val searchText: String = "",
+    val isLoading: Boolean = false,
+    val selectedContactIds: Set<String> = emptySet()
+)
+
+@HiltViewModel
+class AddMembersViewModel @Inject constructor(
+    private val contactRepository: ContactRepository,
+    private val alarmRepository: AlarmRepository,
+    @ApplicationContext private val context: Context
+) : ViewModel() {
+
+    private val _searchText = MutableStateFlow("")
+    private val _isLoading = MutableStateFlow(false)
+    private val _selectedContactIds = MutableStateFlow<Set<String>>(emptySet())
+    private val _allContacts = MutableStateFlow<List<ContactItem>>(emptyList())
+
+    val state: StateFlow<AddMembersState> = combine(
+        _allContacts,
+        _searchText,
+        _isLoading,
+        _selectedContactIds
+    ) { contacts, searchText, isLoading, selectedIds ->
+        val filteredContacts = if (searchText.isBlank()) {
+            contacts
+        } else {
+            contacts.filter { it.name.contains(searchText, ignoreCase = true) || it.phoneNumber.contains(searchText) }
+        }
+        
+        AddMembersState(
+            contacts = filteredContacts.map { it.copy(isSelected = selectedIds.contains(it.id)) },
+            searchText = searchText,
+            isLoading = isLoading,
+            selectedContactIds = selectedIds
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AddMembersState())
+
+    fun loadContacts() {
+        if (_isLoading.value) return
+        
+        _isLoading.value = true
+        viewModelScope.launch {
+            contactRepository.fetchContacts().collect { contacts ->
+                _allContacts.value = contacts
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchText.value = query
+    }
+
+    fun toggleSelection(contactId: String) {
+        _selectedContactIds.update { current ->
+            if (current.contains(contactId)) current - contactId else current + contactId
+        }
+    }
+    
+    fun getSelectedContacts(): List<ContactItem> {
+        return _allContacts.value.filter { _selectedContactIds.value.contains(it.id) }
+    }
+
+    fun clearSelection() {
+        _selectedContactIds.value = emptySet()
+        _searchText.value = ""
+    }
+
+    fun createGroup(name: String, avatarUriString: String?, onComplete: () -> Unit) {
+        val selectedContacts = getSelectedContacts()
+        if (name.isBlank() || selectedContacts.isEmpty()) return
+
+        viewModelScope.launch {
+            val finalAvatarPath = if (avatarUriString != null) {
+                saveAvatarToInternalStorage(Uri.parse(avatarUriString))
+            } else {
+                null
+            }
+
+            val group = GroupItem(
+                name = name,
+                membersCount = selectedContacts.size,
+                contactIds = selectedContacts.joinToString(",") { it.id },
+                avatarUri = finalAvatarPath
+            )
+            alarmRepository.addGroup(group)
+            clearSelection() // Сбрасываем выбор после успешного сохранения
+            onComplete()
+        }
+    }
+
+    private suspend fun saveAvatarToInternalStorage(uri: Uri): String? = withContext(Dispatchers.IO) {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
+            val fileName = "group_avatar_${System.currentTimeMillis()}.jpg"
+            val file = File(context.filesDir, "avatars")
+            if (!file.exists()) file.mkdirs()
+            
+            val outputFile = File(file, fileName)
+            FileOutputStream(outputFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            outputFile.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package com.wem.snoozy.domain.repository
 
 import com.wem.snoozy.domain.entity.AlarmItem
+import com.wem.snoozy.domain.entity.GroupItem
 import kotlinx.coroutines.flow.Flow
 
 interface AlarmRepository {
@@ -14,4 +15,11 @@ interface AlarmRepository {
     suspend fun toggleAlarmState(alarmItem: AlarmItem)
 
     suspend fun deleteAlarm(alarmId: Int)
+
+    // Группы
+    suspend fun addGroup(groupItem: GroupItem)
+
+    fun getGroups(): Flow<List<GroupItem>>
+
+    suspend fun deleteGroup(groupId: Int)
 }
