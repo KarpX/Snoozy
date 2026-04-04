@@ -99,7 +99,7 @@ class AlarmScheduler @Inject constructor(
             val intent = Intent(context, AlarmReceiver::class.java).apply {
                 putExtra(AlarmReceiver.EXTRA_TYPE, AlarmReceiver.TYPE_BEDTIME)
                 putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmItem.id)
-                putExtra("RING_HOURS", alarmItem.ringHours) // Передаем время просыпания
+                putExtra("RING_HOURS", alarmItem.ringHours)
             }
 
             val pendingIntent = PendingIntent.getBroadcast(
@@ -111,17 +111,57 @@ class AlarmScheduler @Inject constructor(
 
             val triggerAt = scheduleTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                } else {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                }
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-            }
+            setExactAlarm(triggerAt, pendingIntent)
         } catch (e: Exception) {
             Log.e("AlarmScheduler", "Error scheduling bedtime", e)
+        }
+    }
+
+    fun scheduleWakeupCheck(alarmId: Int) {
+        val triggerAt = System.currentTimeMillis() + 5 * 60 * 1000 // 5 minutes
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_CHECK_WAKEUP
+            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, alarmId + WAKEUP_CHECK_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        setExactAlarm(triggerAt, pendingIntent)
+        Log.d("AlarmScheduler", "Scheduled WakeupCheck for $alarmId in 5 minutes")
+    }
+
+    fun scheduleWakeupExpiry(alarmId: Int) {
+        val triggerAt = System.currentTimeMillis() + 60 * 1000 // 1 minute
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_EXPIRE_WAKEUP
+            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, alarmId + WAKEUP_EXPIRY_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        setExactAlarm(triggerAt, pendingIntent)
+        Log.d("AlarmScheduler", "Scheduled WakeupExpiry for $alarmId in 1 minute")
+    }
+
+    fun cancelWakeupExpiry(alarmId: Int) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_EXPIRE_WAKEUP
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, alarmId + WAKEUP_EXPIRY_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+    }
+
+    private fun setExactAlarm(triggerAt: Long, pendingIntent: PendingIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+            }
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
         }
     }
 
@@ -171,5 +211,7 @@ class AlarmScheduler @Inject constructor(
 
     companion object {
         private const val BEDTIME_OFFSET = 10000
+        private const val WAKEUP_CHECK_OFFSET = 20000
+        private const val WAKEUP_EXPIRY_OFFSET = 30000
     }
 }

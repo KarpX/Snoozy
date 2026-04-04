@@ -21,6 +21,9 @@ interface Dao {
     @Query("UPDATE alarms SET checked = :isChecked WHERE id = :alarmId")
     suspend fun updateCheckedStatus(alarmId: Int, isChecked: Boolean)
 
+    @Query("UPDATE alarms SET isOverslept = :isOverslept WHERE id = :alarmId")
+    suspend fun updateOversleptStatus(alarmId: Int, isOverslept: Boolean)
+
     @Query("DELETE FROM alarms WHERE id= :alarmId")
     suspend fun deleteAlarm(alarmId: Int)
 }

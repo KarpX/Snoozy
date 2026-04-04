@@ -2,6 +2,7 @@ package com.wem.snoozy.data.receiver
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -45,29 +46,101 @@ class AlarmReceiver : BroadcastReceiver() {
         
         Log.d("AlarmReceiver", "onReceive: action=$action, alarmId=$alarmId, type=$type, ringHours=$ringHours")
 
-        if (action == ACTION_DISMISS_ALARM) {
-            val serviceIntent = Intent(context, AlarmService::class.java)
-            context.stopService(serviceIntent)
-            
-            if (alarmId != -1) {
-                updateAlarmAfterRing(alarmId)
+        when (action) {
+            ACTION_DISMISS_ALARM -> {
+                val serviceIntent = Intent(context, AlarmService::class.java)
+                context.stopService(serviceIntent)
+                
+                if (alarmId != -1) {
+                    updateAlarmAfterRing(alarmId)
+                    // Планируем проверку через 5 минут
+                    alarmScheduler.scheduleWakeupCheck(alarmId)
+                }
             }
-            return
+            ACTION_CHECK_WAKEUP -> {
+                if (alarmId != -1) {
+                    showWakeupCheckNotification(context, alarmId)
+                    // Планируем отметку "проспал" через 1 минуту, если не подтвердит
+                    alarmScheduler.scheduleWakeupExpiry(alarmId)
+                }
+            }
+            ACTION_CONFIRM_WAKEUP -> {
+                if (alarmId != -1) {
+                    cancelWakeupCheck(context, alarmId)
+                    scope.launch {
+                        dao.updateOversleptStatus(alarmId, false)
+                    }
+                }
+            }
+            ACTION_EXPIRE_WAKEUP -> {
+                if (alarmId != -1) {
+                    cancelWakeupCheck(context, alarmId)
+                    scope.launch {
+                        dao.updateOversleptStatus(alarmId, true)
+                    }
+                }
+            }
+            else -> {
+                if (action == ACTION_ALARM || type == TYPE_ALARM) {
+                    val serviceIntent = Intent(context, AlarmService::class.java).apply {
+                        putExtra(EXTRA_ALARM_ID, alarmId)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent)
+                    } else {
+                        context.startService(serviceIntent)
+                    }
+                } else if (action == ACTION_BEDTIME || type == TYPE_BEDTIME) {
+                    showBedtimeNotification(context, ringHours)
+                }
+            }
+        }
+    }
+
+    private fun showWakeupCheckNotification(context: Context, alarmId: Int) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "wakeup_check_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Wakeup Check",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Check if user is awake"
+                setSound(null, null)
+                enableVibration(false)
+            }
+            notificationManager.createNotificationChannel(channel)
         }
 
-        if (action == ACTION_ALARM || type == TYPE_ALARM) {
-            val serviceIntent = Intent(context, AlarmService::class.java).apply {
-                putExtra(EXTRA_ALARM_ID, alarmId)
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
-        } else if (action == ACTION_BEDTIME || type == TYPE_BEDTIME) {
-            showBedtimeNotification(context, ringHours)
+        val confirmIntent = Intent(context, AlarmReceiver::class.java).apply {
+            action = ACTION_CONFIRM_WAKEUP
+            putExtra(EXTRA_ALARM_ID, alarmId)
         }
+        val confirmPendingIntent = PendingIntent.getBroadcast(
+            context, alarmId + 2000, confirmIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setContentTitle("Вы проснулись?")
+            .setContentText("Нажмите, если вы не спите")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .addAction(android.R.drawable.checkbox_on_background, "Я не сплю", confirmPendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(true)
+            .build()
+
+        notificationManager.notify(WAKEUP_NOTIFICATION_ID_OFFSET + alarmId, notification)
+    }
+
+    private fun cancelWakeupCheck(context: Context, alarmId: Int) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(WAKEUP_NOTIFICATION_ID_OFFSET + alarmId)
+        alarmScheduler.cancelWakeupExpiry(alarmId)
     }
 
     private fun showBedtimeNotification(context: Context, ringHours: String?) {
@@ -114,11 +187,12 @@ class AlarmReceiver : BroadcastReceiver() {
             val alarmModel = dao.getAlarmById(alarmId) ?: return@launch
             val alarmItem = alarmModel.toAlarmItem()
 
+            // Сбрасываем статус "проспал" при новом звонке
+            dao.updateOversleptStatus(alarmId, false)
+
             if (alarmItem.repeatDays.isEmpty()) {
-                // Разовый будильник — просто выключаем
                 dao.updateCheckedStatus(alarmId, false)
             } else {
-                // Повторяющийся — вычисляем следующую дату
                 val alarmTime = LocalTime.parse(alarmItem.ringHours, DateTimeFormatter.ofPattern("HH:mm"))
                 val currentRingDate = alarmItem.ringDay.formatStringToDate()
                 val currentDateTime = LocalDateTime.of(currentRingDate, alarmTime)
@@ -128,11 +202,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 val nextAlarmItem = alarmItem.copy(
                     ringDay = formatDateForDisplay(nextDateTime.toLocalDate())
                 )
-                
-                // КРИТИЧЕСКИ ВАЖНО: сохраняем новую дату в БД
+
                 dao.addAlarm(nextAlarmItem.toAlarmItemModel())
-                
-                // И планируем следующий звонок
                 alarmScheduler.schedule(nextAlarmItem)
             }
         }
@@ -174,7 +245,11 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_ALARM = "com.wem.snoozy.ALARM_ACTION"
         const val ACTION_BEDTIME = "com.wem.snoozy.BEDTIME_ACTION"
         const val ACTION_DISMISS_ALARM = "com.wem.snoozy.DISMISS_ALARM"
+        const val ACTION_CHECK_WAKEUP = "com.wem.snoozy.CHECK_WAKEUP"
+        const val ACTION_CONFIRM_WAKEUP = "com.wem.snoozy.CONFIRM_WAKEUP"
+        const val ACTION_EXPIRE_WAKEUP = "com.wem.snoozy.EXPIRE_WAKEUP"
 
         const val NOTIFICATION_ID = 1001
+        const val WAKEUP_NOTIFICATION_ID_OFFSET = 2000
     }
 }

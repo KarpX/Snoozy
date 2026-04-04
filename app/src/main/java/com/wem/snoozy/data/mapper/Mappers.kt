@@ -14,7 +14,8 @@ fun AlarmItemModel.toAlarmItem() = AlarmItem(
     this.ringHours,
     this.timeToBed,
     this.checked,
-    this.repeatDays
+    this.repeatDays,
+    this.isOverslept
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -25,7 +26,8 @@ fun AlarmItem.toAlarmItemModel() = AlarmItemModel(
     timeToMilli(this.ringHours),
     this.timeToBed,
     this.checked,
-    this.repeatDays
+    this.repeatDays,
+    this.isOverslept
 )
 
 
