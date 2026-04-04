@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.concurrent.futures)
 
     // Google Auth & Credentials
     implementation(libs.androidx.credentials)
