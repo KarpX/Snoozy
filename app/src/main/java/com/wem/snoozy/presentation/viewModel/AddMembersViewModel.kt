@@ -1,6 +1,10 @@
 package com.wem.snoozy.presentation.viewModel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -78,45 +82,38 @@ class AddMembersViewModel @Inject constructor(
         if (_isLoading.value) return
         
         _isLoading.value = true
+        _allContacts.value = emptyList()
         viewModelScope.launch {
             try {
                 contactRepository.fetchContacts().collect { localContacts ->
-                    Log.d("AddMembersViewModel", "Fetched ${localContacts.size} local contacts")
-                    
-                    val registeredContacts = withContext(Dispatchers.IO) {
-                        localContacts.map { contact ->
-                            async {
-                                try {
-                                    val user = userRepository.checkUserByPhone(contact.phoneNumber)
-                                    Log.v("AddMembersViewModel", "Checking phone: ${contact.phoneNumber}")
-                                    if (user != null) {
-                                        Log.d("AddMembersViewModel", "User found for phone: ${contact.phoneNumber}, ID: ${user.id}")
-                                        // Используем ID пользователя из БД, так как он нужен для создания группы.
-                                        // Если ID почему-то 0, логируем это, так как это вызовет проблемы с выбором.
-                                        contact.copy(
-                                            id = user.id.toString(),
-                                            photoUri = user.avatarLink?.let { Uri.parse(it) } ?: contact.photoUri
-                                        )
-                                    } else {
+                    localContacts.chunked(10).forEach { chunk ->
+                        val registeredBatch = withContext(Dispatchers.IO) {
+                            chunk.map { contact ->
+                                async {
+                                    try {
+                                        val user = userRepository.checkUserByPhone(contact.phoneNumber)
+                                        if (user != null) {
+                                            contact.copy(
+                                                id = user.id.toString(),
+                                                photoUri = user.avatarLink?.let { Uri.parse(it) } ?: contact.photoUri
+                                            )
+                                        } else {
+                                            null
+                                        }
+                                    } catch (e: Exception) {
                                         null
                                     }
-                                } catch (e: Exception) {
-                                    Log.e("AddMembersViewModel", "Error checking phone: ${contact.phoneNumber}", e)
-                                    null
                                 }
-                            }
-                        }.awaitAll().filterNotNull()
+                            }.awaitAll().filterNotNull()
+                        }
+                        
+                        if (registeredBatch.isNotEmpty()) {
+                            _allContacts.update { current -> current + registeredBatch }
+                        }
                     }
-                    
-                    // Удаляем дубликаты по ID, чтобы не было проблем с выбором
-                    val uniqueRegisteredContacts = registeredContacts.distinctBy { it.id }
-                    
-                    Log.d("AddMembersViewModel", "Found ${uniqueRegisteredContacts.size} unique registered contacts")
-                    _allContacts.value = uniqueRegisteredContacts
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
-                Log.e("AddMembersViewModel", "Global error loading contacts", e)
                 _isLoading.value = false
             }
         }
@@ -149,23 +146,18 @@ class AddMembersViewModel @Inject constructor(
             _isLoading.value = true
             
             val currentUserId = userPreferencesManager.userIdFlow.first()
-            
-            // Собираем список ID участников. 
             val memberIds = selectedContacts.mapNotNull { it.id.toIntOrNull() }.toMutableList()
             if (currentUserId != null && !memberIds.contains(currentUserId)) {
                 memberIds.add(currentUserId)
             }
 
-            Log.d("AddMembersViewModel", "Creating group with member IDs: $memberIds")
             val createdGroup = groupsRepository.createGroup(name, memberIds)
             
             if (createdGroup != null && avatarUriString != null) {
-                val localFile = saveAvatarToInternalStorage(Uri.parse(avatarUriString))
-                if (localFile != null) {
-                    val file = File(localFile)
-                    val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                    val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-                    
+                val compressedFile = saveCompressedImage(Uri.parse(avatarUriString))
+                if (compressedFile != null) {
+                    val requestFile = compressedFile.asRequestBody("image/*".toMediaTypeOrNull())
+                    val body = MultipartBody.Part.createFormData("file", compressedFile.name, requestFile)
                     groupsRepository.uploadAvatar(createdGroup.id, body)
                 }
             }
@@ -178,21 +170,69 @@ class AddMembersViewModel @Inject constructor(
         }
     }
 
-    private suspend fun saveAvatarToInternalStorage(uri: Uri): String? = withContext(Dispatchers.IO) {
+    private suspend fun saveCompressedImage(uri: Uri): File? = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            val fileName = "group_avatar_${System.currentTimeMillis()}.jpg"
-            val file = File(context.filesDir, "avatars")
-            if (!file.exists()) file.mkdirs()
+            var originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return@withContext null
             
-            val outputFile = File(file, fileName)
-            FileOutputStream(outputFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
+            originalBitmap = rotateImageIfRequired(originalBitmap, uri)
+            
+            val maxSize = 1024
+            val width = originalBitmap.width
+            val height = originalBitmap.height
+            val scale = Math.min(maxSize.toFloat() / width, maxSize.toFloat() / height).coerceAtMost(1f)
+            
+            val scaledBitmap = if (scale < 1f) {
+                Bitmap.createScaledBitmap(originalBitmap, (width * scale).toInt(), (height * scale).toInt(), true)
+            } else {
+                originalBitmap
             }
-            outputFile.absolutePath
+
+            val file = File(context.cacheDir, "compressed_group_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            }
+            
+            if (scaledBitmap != originalBitmap) {
+                scaledBitmap.recycle()
+            }
+            originalBitmap.recycle()
+            
+            file
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun rotateImageIfRequired(bitmap: Bitmap, uri: Uri): Bitmap {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return bitmap
+        val ei = try {
+            ExifInterface(inputStream)
+        } catch (e: Exception) {
+            return bitmap
+        }
+        
+        val orientation = ei.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )
+
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(bitmap, 270f)
+            else -> bitmap
+        }
+    }
+
+    private fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(angle)
+        val rotatedBitmap = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        if (rotatedBitmap != source) {
+            source.recycle()
+        }
+        return rotatedBitmap
     }
 }

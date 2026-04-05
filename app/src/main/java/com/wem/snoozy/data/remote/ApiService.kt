@@ -2,6 +2,7 @@ package com.wem.snoozy.data.remote
 
 import com.wem.snoozy.data.remote.dto.*
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -47,5 +48,18 @@ interface ApiService {
     suspend fun checkPhone(
         @Query("phoneNumber") phoneNumber: String
     ): Response<UserResponse>
+
+    // User Profile
+    @GET("api/v1/users/me")
+    suspend fun getCurrentUser(): Response<UserResponse>
+
+    @Multipart
+    @POST("api/v1/users/avatar")
+    suspend fun uploadUserAvatar(
+        @Part file: MultipartBody.Part
+    ): Response<AvatarResponse>
+
+    @GET("api/v1/users/avatar")
+    suspend fun getUserAvatar(): Response<ResponseBody>
 
 }

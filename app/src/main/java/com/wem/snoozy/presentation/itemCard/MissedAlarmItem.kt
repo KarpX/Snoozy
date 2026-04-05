@@ -1,5 +1,6 @@
 package com.wem.snoozy.presentation.itemCard
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,21 +65,16 @@ fun MissedAlarmItem(
                     .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
-                if (!avatarLink.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = avatarLink,
-                        contentDescription = "Member Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                Log.v("MemberAvatar", avatarLink.toString())
+                AsyncImage(
+                    model = avatarLink ?: R.drawable.ic_no_avatar,
+                    contentDescription = "Member Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.ic_no_avatar),
+                    error = painterResource(R.drawable.ic_no_avatar),
+                    fallback = painterResource(R.drawable.ic_no_avatar)
+                )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(

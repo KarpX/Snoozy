@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,10 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.wem.snoozy.R
 
 @Composable
 fun UpcomingAlarmItem(name: String, time: String, avatarLink: String? = null) {
@@ -47,21 +46,15 @@ fun UpcomingAlarmItem(name: String, time: String, avatarLink: String? = null) {
                 .background(Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
-            if (!avatarLink.isNullOrEmpty()) {
-                AsyncImage(
-                    model = avatarLink,
-                    contentDescription = "Member Avatar",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            AsyncImage(
+                model = avatarLink ?: R.drawable.ic_no_avatar,
+                contentDescription = "Member Avatar",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.ic_no_avatar),
+                error = painterResource(R.drawable.ic_no_avatar),
+                fallback = painterResource(R.drawable.ic_no_avatar)
+            )
         }
         Spacer(modifier = Modifier.width(10.dp))
         Text(
