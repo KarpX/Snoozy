@@ -1,6 +1,10 @@
 package com.wem.snoozy.presentation.viewModel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -60,7 +64,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = currentState.copy(isUploading = true)
             
-            val file = saveUriToFile(uri)
+            val file = saveCompressedImage(uri)
             if (file != null) {
                 val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
@@ -81,17 +85,70 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private suspend fun saveUriToFile(uri: Uri): File? = withContext(Dispatchers.IO) {
+    private suspend fun saveCompressedImage(uri: Uri): File? = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            val file = File(context.cacheDir, "temp_avatar_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { outputStream ->
-                inputStream.copyTo(outputStream)
+            var originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return@withContext null
+            
+            // Исправляем ориентацию на основе EXIF данных
+            originalBitmap = rotateImageIfRequired(originalBitmap, uri)
+            
+            val maxSize = 1024
+            val width = originalBitmap.width
+            val height = originalBitmap.height
+            val scale = Math.min(maxSize.toFloat() / width, maxSize.toFloat() / height).coerceAtMost(1f)
+            
+            val scaledBitmap = if (scale < 1f) {
+                Bitmap.createScaledBitmap(originalBitmap, (width * scale).toInt(), (height * scale).toInt(), true)
+            } else {
+                originalBitmap
             }
+
+            val file = File(context.cacheDir, "compressed_avatar_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            }
+            
+            if (scaledBitmap != originalBitmap) {
+                scaledBitmap.recycle()
+            }
+            originalBitmap.recycle()
+
             file
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun rotateImageIfRequired(bitmap: Bitmap, uri: Uri): Bitmap {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return bitmap
+        val ei = try {
+            ExifInterface(inputStream)
+        } catch (e: Exception) {
+            return bitmap
+        }
+        
+        val orientation = ei.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )
+
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(bitmap, 270f)
+            else -> bitmap
+        }
+    }
+
+    private fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(angle)
+        val rotatedBitmap = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        if (rotatedBitmap != source) {
+            source.recycle()
+        }
+        return rotatedBitmap
     }
 }
