@@ -37,9 +37,10 @@ interface ApiService {
     ): Response<GroupResponse>
 
     @Multipart
-    @POST("api/v1/groups/{id}")
+    @POST("api/v1/groups/avatar/{id}")
     suspend fun uploadGroupAvatar(
         @Path("id") id: Int,
         @Part file: MultipartBody.Part
     ): Response<AvatarResponse>
+
 }

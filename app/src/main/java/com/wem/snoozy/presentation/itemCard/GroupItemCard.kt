@@ -1,5 +1,6 @@
 package com.wem.snoozy.presentation.itemCard
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,7 @@ fun GroupItemCard(
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
+                Log.v("groups", "${groupItem.avatarUri}")
                 if (!groupItem.avatarUri.isNullOrEmpty()) {
                     AsyncImage(
                         model = groupItem.avatarUri,

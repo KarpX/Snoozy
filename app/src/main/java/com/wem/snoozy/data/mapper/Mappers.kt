@@ -55,7 +55,7 @@ fun GroupItem.toGroupItemModel() = GroupItemModel(
     name = this.name,
     membersCount = this.membersCount,
     contactIds = this.contactIds,
-    avatarUri = this.avatarUri
+    avatarUri = this.avatarUri.fixUrl()
 )
 
 // Группы (Remote)
@@ -63,7 +63,7 @@ fun GroupResponse.toGroupItem() = GroupItem(
     id = this.id,
     name = this.name,
     ownerId = this.ownerId,
-    avatarUri = this.url,
+    avatarUri = this.url.fixUrl(),
     membersCount = this.members.size,
     members = this.members.map { it.toMember() }
 )
@@ -71,9 +71,20 @@ fun GroupResponse.toGroupItem() = GroupItem(
 fun MemberDto.toMember() = Member(
     id = this.id,
     username = this.username,
-    avatarUrl = this.avatarUrl
+    avatarUrl = this.avatarUrl.fixUrl()
 )
 
 fun List<GroupItemModel>.toGroupItems() = this.map { it.toGroupItem() }
 
 fun Flow<List<GroupItemModel>>.toGroupItemsFlow() = this.map { it.toGroupItems() }
+
+fun String?.fixUrl(): String? {
+    if (this == null) return null
+    // Заменяем localhost на IP сервера из NetworkModule
+    return if (this.contains("localhost")) {
+        this.replace("localhost:8080", "45.156.22.247:8081")
+            .replace("localhost", "45.156.22.247")
+    } else {
+        this
+    }
+}

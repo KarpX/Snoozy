@@ -5,17 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,17 +22,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.wem.snoozy.R
 import com.wem.snoozy.ui.theme.SnoozyTheme
-import com.wem.snoozy.ui.theme.TaupeGray
 
 @Composable
-fun MissedAlarmItem(name: String, time: String) {
+fun MissedAlarmItem(
+    name: String,
+    time: String,
+    avatarUrl: String? = null
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -56,8 +58,18 @@ fun MissedAlarmItem(name: String, time: String) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color.LightGray)
-            )
+                    .background(Color.LightGray),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!avatarUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = "Member Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = name,
@@ -85,7 +97,6 @@ fun MissedAlarmItem(name: String, time: String) {
                     .size(32.dp)
                     .clip(RoundedCornerShape(50))
                     .background(color = MaterialTheme.colorScheme.onBackground)
-                    .padding(horizontal = 8.dp)
                     .clickable {
                         // TODO call to friend
                     },

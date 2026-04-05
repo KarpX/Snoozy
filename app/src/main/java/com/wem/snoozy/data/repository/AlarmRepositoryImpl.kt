@@ -57,16 +57,4 @@ class AlarmRepositoryImpl @Inject constructor(
         alarmScheduler.cancelAlarm(alarmId)
         alarmScheduler.cancelBedtimeNotification(alarmId)
     }
-
-    override suspend fun addGroup(groupItem: GroupItem) {
-        dao.addGroup(groupItem.toGroupItemModel())
-    }
-
-    override fun getGroups(): Flow<List<GroupItem>> {
-        return dao.getGroups().toGroupItemsFlow()
-    }
-
-    override suspend fun deleteGroup(groupId: Int) {
-        dao.deleteGroup(groupId)
-    }
 }
