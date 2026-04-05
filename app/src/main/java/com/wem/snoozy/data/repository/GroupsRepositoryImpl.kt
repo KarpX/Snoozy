@@ -2,7 +2,6 @@ package com.wem.snoozy.data.repository
 
 import android.util.Log
 import com.wem.snoozy.data.local.Dao
-import com.wem.snoozy.data.mapper.fixUrl
 import com.wem.snoozy.data.mapper.toGroupItem
 import com.wem.snoozy.data.mapper.toGroupItemModel
 import com.wem.snoozy.data.mapper.toGroupItems
@@ -76,7 +75,7 @@ class GroupsRepositoryImpl @Inject constructor(
             val response = apiService.uploadGroupAvatar(groupId, file)
 
             if (response.isSuccessful) {
-                val url = response.body()?.url?.fixUrl()
+                val url = response.body()?.url
                 url?.let { dao.updateGroupAvatar(groupId, it) }
                 url
             } else null

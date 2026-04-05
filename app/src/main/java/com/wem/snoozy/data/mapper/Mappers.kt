@@ -62,52 +62,29 @@ fun GroupItem.toGroupItemModel() = GroupItemModel(
 // Группы (Remote)
 fun GroupResponse.toGroupItem(): GroupItem {
     val rawUrl = this.avatarUrl ?: this.url
-    val fixedAvatarUri = rawUrl.fixUrl("group")
     
-    Log.d("Mappers", "Group [${this.name}] (id: ${this.id}): rawUrl=$rawUrl, fixed=$fixedAvatarUri")
+    Log.d("Mappers", "Group [${this.name}] (id: ${this.id}): rawUrl=$rawUrl")
     
     return GroupItem(
         id = this.id,
         name = this.name,
         ownerId = this.ownerId,
-        avatarUri = fixedAvatarUri,
+        avatarUri = rawUrl,
         membersCount = this.members.size,
         members = this.members.map { it.toMember() }
     )
 }
 
 fun MemberDto.toMember(): Member {
-    val fixedAvatarUrl = this.avatarUrl.fixUrl("user")
-    Log.d("Mappers", "  Member [${this.username}] (id: ${this.id}): avatarUrl=${this.avatarUrl}, fixed=$fixedAvatarUrl")
+    Log.d("Mappers", "  Member [${this.username}] (id: ${this.id}): avatarLink=${this.avatarLink}")
     
     return Member(
         id = this.id,
         username = this.username,
-        avatarUrl = fixedAvatarUrl
+        avatarLink = avatarLink
     )
 }
 
 fun List<GroupItemModel>.toGroupItems() = this.map { it.toGroupItem() }
 
 fun Flow<List<GroupItemModel>>.toGroupItemsFlow() = this.map { it.toGroupItems() }
-
-fun String?.fixUrl(type: String = "file"): String? {
-    if (this == null || this.isBlank()) return null
-    
-    // 1. Исправляем хост
-    var result = if (this.contains("localhost")) {
-        this.replace(Regex("localhost:\\d+"), "45.156.22.247:8081")
-            .replace("localhost", "45.156.22.247")
-    } else {
-        this
-    }
-
-    // 2. Добавляем уникальный маркер типа в начало параметров, чтобы Coil не путал кэш
-    result = if (result.contains("?")) {
-        result.replace("?", "?t=$type&")
-    } else {
-        "$result?t=$type"
-    }
-
-    return result
-}

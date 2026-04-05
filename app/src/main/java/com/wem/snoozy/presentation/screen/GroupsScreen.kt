@@ -199,7 +199,7 @@ private fun MissedAlarmsSection(
                     MissedAlarmItem(
                         name = member.username,
                         time = "07:30",
-                        avatarUrl = member.avatarUrl
+                        avatarLink = member.avatarLink
                     )
                 }
             }
@@ -244,7 +244,7 @@ private fun UpcomingAlarmsSection(members: List<Member>) {
                     UpcomingAlarmItem(
                         name = member.username,
                         time = "09:15",
-                        avatarUrl = member.avatarUrl
+                        avatarLink = member.avatarLink
                     )
                 }
             }

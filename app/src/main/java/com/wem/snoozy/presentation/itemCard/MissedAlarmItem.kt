@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,7 +38,7 @@ import com.wem.snoozy.ui.theme.SnoozyTheme
 fun MissedAlarmItem(
     name: String,
     time: String,
-    avatarUrl: String? = null
+    avatarLink: String? = null
 ) {
     Row(
         modifier = Modifier
@@ -61,12 +63,19 @@ fun MissedAlarmItem(
                     .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
-                if (!avatarUrl.isNullOrEmpty()) {
+                if (!avatarLink.isNullOrEmpty()) {
                     AsyncImage(
-                        model = avatarUrl,
+                        model = avatarLink,
                         contentDescription = "Member Avatar",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

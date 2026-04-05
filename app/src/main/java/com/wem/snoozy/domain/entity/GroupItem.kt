@@ -13,5 +13,5 @@ data class GroupItem(
 data class Member(
     val id: Int,
     val username: String,
-    val avatarUrl: String?
+    val avatarLink: String?
 )

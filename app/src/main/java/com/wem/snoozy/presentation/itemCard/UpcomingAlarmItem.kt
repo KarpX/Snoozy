@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 
 @Composable
-fun UpcomingAlarmItem(name: String, time: String, avatarUrl: String? = null) {
+fun UpcomingAlarmItem(name: String, time: String, avatarLink: String? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,9 +47,9 @@ fun UpcomingAlarmItem(name: String, time: String, avatarUrl: String? = null) {
                 .background(Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
-            if (!avatarUrl.isNullOrEmpty()) {
+            if (!avatarLink.isNullOrEmpty()) {
                 AsyncImage(
-                    model = avatarUrl,
+                    model = avatarLink,
                     contentDescription = "Member Avatar",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
