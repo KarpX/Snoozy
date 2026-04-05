@@ -3,6 +3,7 @@ package com.wem.snoozy.data.local
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ class UserPreferencesManager(
         val CYCLE_LENGTH = stringPreferencesKey("cycle_length")
         val DARK_THEME_KEY = booleanPreferencesKey("dark_theme")
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
+        val USER_ID = intPreferencesKey("user_id")
     }
 
     val sleepStartTimeFlow: Flow<String> = context.dataStore.data
@@ -40,6 +42,11 @@ class UserPreferencesManager(
     val accessTokenFlow: Flow<String?> = context.dataStore.data
         .map { preferences ->
             preferences[ACCESS_TOKEN]
+        }
+
+    val userIdFlow: Flow<Int?> = context.dataStore.data
+        .map { preferences ->
+            preferences[USER_ID]
         }
 
     suspend fun saveSleepStartTime(time: String) {
@@ -66,9 +73,16 @@ class UserPreferencesManager(
         }
     }
 
+    suspend fun saveUserId(userId: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_ID] = userId
+        }
+    }
+
     suspend fun clearAccessToken() {
         context.dataStore.edit { preferences ->
             preferences.remove(ACCESS_TOKEN)
+            preferences.remove(USER_ID)
         }
     }
 

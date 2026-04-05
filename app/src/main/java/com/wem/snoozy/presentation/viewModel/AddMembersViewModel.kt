@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.data.repository.GroupsRepositoryImpl
 import com.wem.snoozy.domain.entity.ContactItem
 import com.wem.snoozy.domain.repository.AlarmRepository
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,6 +40,7 @@ class AddMembersViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val alarmRepository: AlarmRepository,
     private val groupsRepository: GroupsRepositoryImpl,
+    private val userPreferencesManager: UserPreferencesManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -99,15 +102,19 @@ class AddMembersViewModel @Inject constructor(
 
     fun createGroup(name: String, avatarUriString: String?, onComplete: () -> Unit) {
         val selectedContacts = getSelectedContacts()
-        if (name.isBlank() || selectedContacts.isEmpty()) return
+        if (name.isBlank()) return
 
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Временный ID для маппинга или использования в API (если нужно)
-            // В API membersId это List<Int>, поэтому преобразуем если возможно,
-            // или используем заглушки, пока нет поиска пользователей по API
-            val memberIds = selectedContacts.mapNotNull { it.id.toIntOrNull() ?: 1 }
+            val currentUserId = userPreferencesManager.userIdFlow.first()
+            
+            // Собираем список ID участников. 
+            // Обязательно добавляем текущего пользователя, если его еще нет в списке.
+            val memberIds = selectedContacts.mapNotNull { it.id.toIntOrNull() }.toMutableList()
+            if (currentUserId != null && !memberIds.contains(currentUserId)) {
+                memberIds.add(currentUserId)
+            }
 
             val createdGroup = groupsRepository.createGroup(name, memberIds)
             
@@ -123,8 +130,10 @@ class AddMembersViewModel @Inject constructor(
             }
             
             _isLoading.value = false
-            clearSelection()
-            onComplete()
+            if (createdGroup != null) {
+                clearSelection()
+                onComplete()
+            }
         }
     }
 
