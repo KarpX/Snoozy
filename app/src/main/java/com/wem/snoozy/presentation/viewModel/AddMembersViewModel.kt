@@ -2,6 +2,7 @@ package com.wem.snoozy.presentation.viewModel
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wem.snoozy.data.local.UserPreferencesManager
@@ -9,9 +10,12 @@ import com.wem.snoozy.data.repository.GroupsRepositoryImpl
 import com.wem.snoozy.domain.entity.ContactItem
 import com.wem.snoozy.domain.repository.AlarmRepository
 import com.wem.snoozy.domain.repository.ContactRepository
+import com.wem.snoozy.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +44,7 @@ class AddMembersViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val alarmRepository: AlarmRepository,
     private val groupsRepository: GroupsRepositoryImpl,
+    private val userRepository: UserRepository,
     private val userPreferencesManager: UserPreferencesManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -74,8 +79,39 @@ class AddMembersViewModel @Inject constructor(
         
         _isLoading.value = true
         viewModelScope.launch {
-            contactRepository.fetchContacts().collect { contacts ->
-                _allContacts.value = contacts
+            try {
+                contactRepository.fetchContacts().collect { localContacts ->
+                    Log.d("AddMembersViewModel", "Fetched ${localContacts.size} local contacts")
+                    
+                    val registeredContacts = withContext(Dispatchers.IO) {
+                        localContacts.map { contact ->
+                            async {
+                                try {
+                                    val user = userRepository.checkUserByPhone(contact.phoneNumber)
+                                    Log.v("AddMembersViewModel", "Checking phone: ${contact.phoneNumber}")
+                                    if (user != null) {
+                                        Log.d("AddMembersViewModel", "User found for phone: ${contact.phoneNumber}")
+                                        contact.copy(
+                                            id = user.id.toString(),
+                                            photoUri = user.avatarLink?.let { Uri.parse(it) } ?: contact.photoUri
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AddMembersViewModel", "Error checking phone: ${contact.phoneNumber}", e)
+                                    null
+                                }
+                            }
+                        }.awaitAll().filterNotNull()
+                    }
+                    
+                    Log.d("AddMembersViewModel", "Found ${registeredContacts.size} registered contacts")
+                    _allContacts.value = registeredContacts
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                Log.e("AddMembersViewModel", "Global error loading contacts", e)
                 _isLoading.value = false
             }
         }
@@ -110,7 +146,6 @@ class AddMembersViewModel @Inject constructor(
             val currentUserId = userPreferencesManager.userIdFlow.first()
             
             // Собираем список ID участников. 
-            // Обязательно добавляем текущего пользователя, если его еще нет в списке.
             val memberIds = selectedContacts.mapNotNull { it.id.toIntOrNull() }.toMutableList()
             if (currentUserId != null && !memberIds.contains(currentUserId)) {
                 memberIds.add(currentUserId)

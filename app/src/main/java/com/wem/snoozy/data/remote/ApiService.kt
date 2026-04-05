@@ -43,4 +43,9 @@ interface ApiService {
         @Part file: MultipartBody.Part
     ): Response<AvatarResponse>
 
+    @HTTP(method = "GET", path = "api/v1/users/phone", hasBody = true)
+    suspend fun checkPhone(
+        @Body request: PhoneCheckRequest
+    ): Response<UserResponse>
+
 }
