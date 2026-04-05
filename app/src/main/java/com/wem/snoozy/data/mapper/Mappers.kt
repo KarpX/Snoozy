@@ -76,12 +76,12 @@ fun GroupResponse.toGroupItem(): GroupItem {
 }
 
 fun MemberDto.toMember(): Member {
-    Log.d("Mappers", "  Member [${this.username}] (id: ${this.id}): avatarLink=${this.avatarLink}")
+    Log.d("Mappers", "  Member [${this.username}] (id: ${this.id}): avatarLink=${this.avatarUrl}")
     
     return Member(
         id = this.id,
         username = this.username,
-        avatarLink = avatarLink
+        avatarLink = avatarUrl
     )
 }
 
