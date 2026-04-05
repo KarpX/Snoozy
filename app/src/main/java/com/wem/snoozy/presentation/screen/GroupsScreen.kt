@@ -87,7 +87,6 @@ fun GroupsScreen(
             ) {
                 items(groups, key = { it.id }) { group ->
                     val isExpanded = selectedGroupId == group.id
-                    Log.v("groupItem", "${group.avatarUri}")
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -122,6 +121,7 @@ fun GroupsScreen(
 
 @Composable
 private fun GroupExpandedDetails(group: GroupItem) {
+    Log.d("Group", group.toString())
     Column(
         modifier = Modifier
             .fillMaxWidth()

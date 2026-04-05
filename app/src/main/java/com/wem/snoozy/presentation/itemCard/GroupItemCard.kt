@@ -60,7 +60,7 @@ fun GroupItemCard(
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Log.v("groups", "${groupItem.avatarUri}")
+                groupItem.avatarUri?.let { Log.d("Group", it) }
                 if (!groupItem.avatarUri.isNullOrEmpty()) {
                     AsyncImage(
                         model = groupItem.avatarUri,

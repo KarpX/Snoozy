@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [AlarmItemModel::class, GroupItemModel::class],
-    version = 4, // Поднимаем версию
+    version = 7, // Поднимаем версию
     exportSchema = false
 )
 abstract class AlarmDatabase : RoomDatabase(){

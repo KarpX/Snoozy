@@ -5,5 +5,6 @@ data class GroupResponse(
     val name: String,
     val ownerId: Int,
     val url: String?,
+    val avatarUrl: String?,
     val members: List<MemberDto>
 )
