@@ -90,7 +90,9 @@ class AddMembersViewModel @Inject constructor(
                                     val user = userRepository.checkUserByPhone(contact.phoneNumber)
                                     Log.v("AddMembersViewModel", "Checking phone: ${contact.phoneNumber}")
                                     if (user != null) {
-                                        Log.d("AddMembersViewModel", "User found for phone: ${contact.phoneNumber}")
+                                        Log.d("AddMembersViewModel", "User found for phone: ${contact.phoneNumber}, ID: ${user.id}")
+                                        // Используем ID пользователя из БД, так как он нужен для создания группы.
+                                        // Если ID почему-то 0, логируем это, так как это вызовет проблемы с выбором.
                                         contact.copy(
                                             id = user.id.toString(),
                                             photoUri = user.avatarLink?.let { Uri.parse(it) } ?: contact.photoUri
@@ -106,8 +108,11 @@ class AddMembersViewModel @Inject constructor(
                         }.awaitAll().filterNotNull()
                     }
                     
-                    Log.d("AddMembersViewModel", "Found ${registeredContacts.size} registered contacts")
-                    _allContacts.value = registeredContacts
+                    // Удаляем дубликаты по ID, чтобы не было проблем с выбором
+                    val uniqueRegisteredContacts = registeredContacts.distinctBy { it.id }
+                    
+                    Log.d("AddMembersViewModel", "Found ${uniqueRegisteredContacts.size} unique registered contacts")
+                    _allContacts.value = uniqueRegisteredContacts
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
@@ -151,6 +156,7 @@ class AddMembersViewModel @Inject constructor(
                 memberIds.add(currentUserId)
             }
 
+            Log.d("AddMembersViewModel", "Creating group with member IDs: $memberIds")
             val createdGroup = groupsRepository.createGroup(name, memberIds)
             
             if (createdGroup != null && avatarUriString != null) {
