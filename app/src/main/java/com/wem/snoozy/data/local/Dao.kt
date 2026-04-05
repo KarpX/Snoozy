@@ -35,6 +35,12 @@ interface Dao {
     @Query("SELECT * FROM `groups` ORDER BY id DESC")
     fun getGroups(): Flow<List<GroupItemModel>>
 
+    @Query("SELECT * FROM `groups` ORDER BY id DESC")
+    suspend fun getGroupsOnce(): List<GroupItemModel>
+
+    @Query("UPDATE `groups` SET avatarUri = :url WHERE id = :groupId")
+    suspend fun updateGroupAvatar(groupId: Int, url: String)
+
     @Query("DELETE FROM `groups` WHERE id = :groupId")
     suspend fun deleteGroup(groupId: Int)
 }

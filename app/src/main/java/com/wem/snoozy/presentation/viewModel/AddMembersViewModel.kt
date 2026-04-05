@@ -4,8 +4,8 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wem.snoozy.data.repository.GroupsRepositoryImpl
 import com.wem.snoozy.domain.entity.ContactItem
-import com.wem.snoozy.domain.entity.GroupItem
 import com.wem.snoozy.domain.repository.AlarmRepository
 import com.wem.snoozy.domain.repository.ContactRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
@@ -34,6 +37,7 @@ data class AddMembersState(
 class AddMembersViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val alarmRepository: AlarmRepository,
+    private val groupsRepository: GroupsRepositoryImpl,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -98,20 +102,28 @@ class AddMembersViewModel @Inject constructor(
         if (name.isBlank() || selectedContacts.isEmpty()) return
 
         viewModelScope.launch {
-            val finalAvatarPath = if (avatarUriString != null) {
-                saveAvatarToInternalStorage(Uri.parse(avatarUriString))
-            } else {
-                null
-            }
+            _isLoading.value = true
+            
+            // Временный ID для маппинга или использования в API (если нужно)
+            // В API membersId это List<Int>, поэтому преобразуем если возможно,
+            // или используем заглушки, пока нет поиска пользователей по API
+            val memberIds = selectedContacts.mapNotNull { it.id.toIntOrNull() ?: 1 }
 
-            val group = GroupItem(
-                name = name,
-                membersCount = selectedContacts.size,
-                contactIds = selectedContacts.joinToString(",") { it.id },
-                avatarUri = finalAvatarPath
-            )
-            alarmRepository.addGroup(group)
-            clearSelection() // Сбрасываем выбор после успешного сохранения
+            val createdGroup = groupsRepository.createGroup(name, memberIds)
+            
+            if (createdGroup != null && avatarUriString != null) {
+                val localFile = saveAvatarToInternalStorage(Uri.parse(avatarUriString))
+                if (localFile != null) {
+                    val file = File(localFile)
+                    val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                    val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+                    
+                    groupsRepository.uploadAvatar(createdGroup.id, body)
+                }
+            }
+            
+            _isLoading.value = false
+            clearSelection()
             onComplete()
         }
     }

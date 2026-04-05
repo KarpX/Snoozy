@@ -1,12 +1,9 @@
 package com.wem.snoozy.data.remote
 
-import com.wem.snoozy.data.remote.dto.AuthResponse
-import com.wem.snoozy.data.remote.dto.GoogleAuthRequest
-import com.wem.snoozy.data.remote.dto.LoginRequest
-import com.wem.snoozy.data.remote.dto.RegisterRequest
+import com.wem.snoozy.data.remote.dto.*
+import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -24,4 +21,25 @@ interface ApiService {
     suspend fun googleAuth(
         @Body request: GoogleAuthRequest
     ): Response<AuthResponse>
+
+    // Groups
+    @GET("api/v1/groups")
+    suspend fun getGroups(): Response<List<GroupResponse>>
+
+    @GET("api/v1/groups/{id}")
+    suspend fun getGroupById(
+        @Path("id") id: Int
+    ): Response<GroupResponse>
+
+    @POST("api/v1/groups")
+    suspend fun createGroup(
+        @Body request: CreateGroupRequest
+    ): Response<GroupResponse>
+
+    @Multipart
+    @POST("api/v1/groups/{id}")
+    suspend fun uploadGroupAvatar(
+        @Path("id") id: Int,
+        @Part file: MultipartBody.Part
+    ): Response<AvatarResponse>
 }
