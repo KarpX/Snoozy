@@ -1,6 +1,9 @@
 package com.wem.snoozy.presentation.screen
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,6 +48,12 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.uploadAvatar(it) }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -66,6 +76,8 @@ fun ProfileScreen(
                     UserMainInfo(
                         username = user.username,
                         avatarUrl = user.avatarLink,
+                        isUploading = state.isUploading,
+                        onAvatarClick = { launcher.launch("image/*") },
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     GroupTitle(
@@ -108,6 +120,8 @@ fun ProfileScreen(
 fun UserMainInfo(
     username: String,
     avatarUrl: String?,
+    isUploading: Boolean,
+    onAvatarClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -121,17 +135,38 @@ fun UserMainInfo(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AsyncImage(
-                model = avatarUrl ?: R.drawable.ic_no_avatar,
-                contentDescription = "User Avatar",
+            Box(
                 modifier = Modifier
                     .size(88.dp)
-                    .clip(RoundedCornerShape(50)),
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(R.drawable.ic_no_avatar),
-                error = painterResource(R.drawable.ic_no_avatar),
-                fallback = painterResource(R.drawable.ic_no_avatar)
-            )
+                    .clip(CircleShape)
+                    .clickable { onAvatarClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = avatarUrl ?: R.drawable.ic_no_avatar,
+                    contentDescription = "User Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.ic_no_avatar),
+                    error = painterResource(R.drawable.ic_no_avatar),
+                    fallback = painterResource(R.drawable.ic_no_avatar)
+                )
+                
+                if (isUploading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+            }
             Text(
                 modifier = Modifier.padding(top = 8.dp),
                 text = username,
