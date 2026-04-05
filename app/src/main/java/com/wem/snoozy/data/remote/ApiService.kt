@@ -1,15 +1,9 @@
 package com.wem.snoozy.data.remote
 
-import com.wem.snoozy.data.remote.dto.AuthResponse
-import com.wem.snoozy.data.remote.dto.GoogleAuthRequest
-import com.wem.snoozy.data.remote.dto.LoginRequest
-import com.wem.snoozy.data.remote.dto.RegisterRequest
-import com.wem.snoozy.data.remote.dto.UserResponse
+import com.wem.snoozy.data.remote.dto.*
+import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -28,8 +22,30 @@ interface ApiService {
         @Body request: GoogleAuthRequest
     ): Response<AuthResponse>
 
-    @GET("api/v1/users/me")
-    suspend fun getCurrentUser(
-        @Header("Authorization") token: String
+    // Groups
+    @GET("api/v1/groups")
+    suspend fun getGroups(): Response<List<GroupResponse>>
+
+    @GET("api/v1/groups/{id}")
+    suspend fun getGroupById(
+        @Path("id") id: Int
+    ): Response<GroupResponse>
+
+    @POST("api/v1/groups")
+    suspend fun createGroup(
+        @Body request: CreateGroupRequest
+    ): Response<GroupResponse>
+
+    @Multipart
+    @POST("api/v1/groups/avatar/{id}")
+    suspend fun uploadGroupAvatar(
+        @Path("id") id: Int,
+        @Part file: MultipartBody.Part
+    ): Response<AvatarResponse>
+
+    @GET("api/v1/users/phone")
+    suspend fun checkPhone(
+        @Query("phoneNumber") phoneNumber: String
     ): Response<UserResponse>
+
 }

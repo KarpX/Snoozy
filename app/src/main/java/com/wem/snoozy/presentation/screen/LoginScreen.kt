@@ -1,5 +1,8 @@
 package com.wem.snoozy.presentation.screen
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -67,6 +70,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -76,6 +80,16 @@ import com.wem.snoozy.presentation.viewModel.AuthUiState
 import com.wem.snoozy.presentation.viewModel.AuthViewModel
 import com.wem.snoozy.presentation.viewModel.SettingsViewModel
 import kotlinx.coroutines.launch
+import java.util.UUID
+
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
 
 @Composable
 fun LoginScreen(
@@ -174,15 +188,13 @@ fun LoginScreen(
 
     Scaffold(
 
-    ) { innerPadding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(top = innerPadding.calculateTopPadding())
-                .padding(bottom = innerPadding.calculateBottomPadding()),
+                .padding(bottom = paddingValues.calculateBottomPadding()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -342,24 +354,27 @@ fun LoginScreen(
 
                         scope.launch {
                             try {
+                                val activityContext = context.findActivity()
+                                if (activityContext == null) {
+                                    Log.e("GoogleAuth", "Could not find Activity context")
+                                    return@launch
+                                }
+
                                 val result = credentialManager.getCredential(
-                                    context = context,
+                                    context = activityContext,
                                     request = request
                                 )
                                 val credential = result.credential
                                 Log.d("GoogleAuth", "Got credential: ${credential.type}")
 
-                                // Извлекаем токен через статический метод createFrom
                                 if (credential is CustomCredential &&
                                     credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
                                 ) {
-
                                     val googleIdTokenCredential =
                                         GoogleIdTokenCredential.createFrom(credential.data)
                                     val idToken = googleIdTokenCredential.idToken
                                     Log.d("GoogleAuth", "ID Token: ${idToken.take(20)}...")
                                     authViewModel.googleAuth(idToken)
-
                                 } else if (credential is GoogleIdTokenCredential) {
                                     val idToken = credential.idToken
                                     Log.d("GoogleAuth", "ID Token (direct): ${idToken.take(20)}...")
@@ -373,10 +388,14 @@ fun LoginScreen(
                             } catch (e: GetCredentialException) {
                                 Log.e(
                                     "GoogleAuth",
-                                    "GetCredentialException: ${e.type} - ${e.message}"
+                                    "GetCredentialException: [${e.type}] ${e.message}"
                                 )
-                                Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG)
-                                    .show()
+                                val userMessage = if (e is NoCredentialException) {
+                                    "Аккаунты Google не найдены. \n1. Проверьте SHA-1 в Google Console.\n2. Убедитесь, что ID — это 'Web Client ID'."
+                                } else {
+                                    "Ошибка входа: ${e.message}"
+                                }
+                                Toast.makeText(context, userMessage, Toast.LENGTH_LONG).show()
                             } catch (e: Exception) {
                                 Log.e("GoogleAuth", "Unknown error", e)
                                 Toast.makeText(

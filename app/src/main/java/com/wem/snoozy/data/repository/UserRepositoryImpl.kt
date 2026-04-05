@@ -1,32 +1,32 @@
 package com.wem.snoozy.data.repository
 
-import com.wem.snoozy.data.local.UserPreferencesManager
+import android.util.Log
 import com.wem.snoozy.data.remote.ApiService
 import com.wem.snoozy.data.remote.dto.UserResponse
 import com.wem.snoozy.domain.repository.UserRepository
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
-    private val apiService: ApiService,
-    private val userPreferencesManager: UserPreferencesManager
+    private val apiService: ApiService
 ) : UserRepository {
-
-    override suspend fun getCurrentUser(): Result<UserResponse> {
-        return try {
-            val token = userPreferencesManager.accessTokenFlow.first()
-            if (token == null) {
-                return Result.failure(Exception("No access token found"))
-            }
-            
-            val response = apiService.getCurrentUser("Bearer $token")
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
+    override suspend fun checkUserByPhone(phoneNumber: String): UserResponse? {
+            val formattedPhone = formatPhoneNumber(phoneNumber)
+            val response = apiService.checkPhone(formattedPhone)
+            return if (response.isSuccessful) {
+                response.body()
             } else {
-                Result.failure(Exception("Failed to fetch user data: ${response.code()}"))
+                null
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+    }
+
+    private fun formatPhoneNumber(phone: String): String {
+        // Удаляем все нецифровые символы
+        val digits = phone.filter { it.isDigit() }
+        // Если начинается с 8, заменяем на 7
+        return if (digits.startsWith("8") && digits.length == 11) {
+            "7" + digits.substring(1)
+        } else {
+            digits
         }
     }
 }
