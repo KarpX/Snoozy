@@ -21,6 +21,7 @@ fun AlarmItemModel.toAlarmItem() = AlarmItem(
     this.timeToBed,
     this.checked,
     this.repeatDays,
+    this.remoteId,
     this.isOverslept
 )
 
@@ -33,6 +34,7 @@ fun AlarmItem.toAlarmItemModel() = AlarmItemModel(
     this.timeToBed,
     this.checked,
     this.repeatDays,
+    this.remoteId,
     this.isOverslept
 )
 

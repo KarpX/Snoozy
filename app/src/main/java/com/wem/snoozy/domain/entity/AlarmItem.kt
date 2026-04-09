@@ -7,5 +7,6 @@ data class AlarmItem(
     val timeToBed: String,
     val checked: Boolean,
     val repeatDays: String,
+    val remoteId: Long? = null,
     val isOverslept: Boolean = false
 )

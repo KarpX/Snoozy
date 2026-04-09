@@ -16,6 +16,9 @@ interface Dao {
     @Query("SELECT * FROM alarms WHERE id = :alarmId")
     suspend fun getAlarmById(alarmId: Int): AlarmItemModel?
 
+    @Query("SELECT * FROM alarms WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getAlarmByRemoteId(remoteId: Long): AlarmItemModel?
+
     @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
     fun getAlarms(): Flow<List<AlarmItemModel>>
 

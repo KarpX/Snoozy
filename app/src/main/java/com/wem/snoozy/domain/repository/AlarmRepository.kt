@@ -14,4 +14,6 @@ interface AlarmRepository {
     suspend fun toggleAlarmState(alarmItem: AlarmItem)
 
     suspend fun deleteAlarm(alarmId: Int)
+
+    suspend fun syncRemoteAlarms()
 }

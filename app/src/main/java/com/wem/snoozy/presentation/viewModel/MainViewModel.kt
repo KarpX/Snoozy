@@ -9,6 +9,7 @@ import com.wem.snoozy.domain.repository.AlarmRepository
 import com.wem.snoozy.domain.repository.GroupRepository
 import com.wem.snoozy.domain.usecase.DeleteAlarmUseCase
 import com.wem.snoozy.domain.usecase.GetAllAlarmsUseCase
+import com.wem.snoozy.domain.usecase.SyncAlarmsUseCase
 import com.wem.snoozy.domain.usecase.ToggleAlarmStateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ class MainViewModel @Inject constructor(
     private val getAllAlarmsUseCase: GetAllAlarmsUseCase,
     private val toggleAlarmStateUseCase: ToggleAlarmStateUseCase,
     private val deleteAlarmUseCase: DeleteAlarmUseCase,
+    private val syncAlarmsUseCase: SyncAlarmsUseCase,
     private val groupRepository: GroupRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow<MainState>(MainState.Initial)
@@ -31,6 +33,7 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _state.value = MainState.Loading
+            syncAlarmsUseCase()
             combine(
                 getAllAlarmsUseCase(),
                 groupRepository.getGroups()
