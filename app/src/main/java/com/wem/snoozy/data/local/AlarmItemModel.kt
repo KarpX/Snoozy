@@ -10,7 +10,7 @@ data class AlarmItemModel(
     val ringHours: String,
     val ringHoursMillis: Int,
     val timeToBed: String,
-    val checked: Boolean,
+    val enabled: Boolean,
     val repeatDays: String,
     @androidx.room.ColumnInfo(index = true) val remoteId: Long? = null,
     val isOverslept: Boolean = false

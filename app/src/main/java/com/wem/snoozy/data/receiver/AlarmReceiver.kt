@@ -15,6 +15,7 @@ import com.wem.snoozy.data.alarm.AlarmService
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.mapper.toAlarmItem
 import com.wem.snoozy.data.mapper.toAlarmItemModel
+import com.wem.snoozy.domain.repository.AlarmRepository
 import com.wem.snoozy.presentation.utils.formatStringToDate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,7 @@ import javax.inject.Inject
 class AlarmReceiver : BroadcastReceiver() {
 
     @Inject
-    lateinit var dao: Dao
+    lateinit var alarmRepository: AlarmRepository
 
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
@@ -52,9 +53,11 @@ class AlarmReceiver : BroadcastReceiver() {
                 context.stopService(serviceIntent)
                 
                 if (alarmId != -1) {
-                    updateAlarmAfterRing(alarmId)
-                    // Планируем проверку через 5 минут
-                    alarmScheduler.scheduleWakeupCheck(alarmId)
+                    scope.launch {
+                        alarmRepository.updateAlarmAfterRing(alarmId)
+                        // Планируем проверку через 5 минут
+                        alarmScheduler.scheduleWakeupCheck(alarmId)
+                    }
                 }
             }
             ACTION_CHECK_WAKEUP -> {
@@ -68,7 +71,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 if (alarmId != -1) {
                     cancelWakeupCheck(context, alarmId)
                     scope.launch {
-                        dao.updateOversleptStatus(alarmId, false)
+                        alarmRepository.updateOversleptStatus(alarmId, false)
                     }
                 }
             }
@@ -76,7 +79,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 if (alarmId != -1) {
                     cancelWakeupCheck(context, alarmId)
                     scope.launch {
-                        dao.updateOversleptStatus(alarmId, true)
+                        alarmRepository.updateOversleptStatus(alarmId, true)
                     }
                 }
             }
@@ -180,60 +183,6 @@ class AlarmReceiver : BroadcastReceiver() {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
-    }
-
-    private fun updateAlarmAfterRing(alarmId: Int) {
-        scope.launch {
-            val alarmModel = dao.getAlarmById(alarmId) ?: return@launch
-            val alarmItem = alarmModel.toAlarmItem()
-
-            // Сбрасываем статус "проспал" при новом звонке
-            dao.updateOversleptStatus(alarmId, false)
-
-            if (alarmItem.repeatDays.isEmpty()) {
-                dao.updateCheckedStatus(alarmId, false)
-            } else {
-                val alarmTime = LocalTime.parse(alarmItem.ringHours, DateTimeFormatter.ofPattern("HH:mm"))
-                val currentRingDate = alarmItem.ringDay.formatStringToDate()
-                val currentDateTime = LocalDateTime.of(currentRingDate, alarmTime)
-                
-                val nextDateTime = getNextOccurrence(currentDateTime, alarmItem.repeatDays)
-                
-                val nextAlarmItem = alarmItem.copy(
-                    ringDay = formatDateForDisplay(nextDateTime.toLocalDate())
-                )
-
-                dao.addAlarm(nextAlarmItem.toAlarmItemModel())
-                alarmScheduler.schedule(nextAlarmItem)
-            }
-        }
-    }
-
-    private fun getNextOccurrence(startDateTime: LocalDateTime, repeatDays: String): LocalDateTime {
-        val days = repeatDays.split(",").mapNotNull { it.trim().toIntOrNull() }.sorted()
-        if (days.isEmpty()) return startDateTime.plusDays(1)
-
-        val currentDayOfWeek = startDateTime.dayOfWeek.value
-        val nextDay = days.firstOrNull { it > currentDayOfWeek } ?: days.first()
-
-        val daysToAdd = if (nextDay > currentDayOfWeek) {
-            nextDay - currentDayOfWeek
-        } else {
-            7 - currentDayOfWeek + nextDay
-        }
-        
-        return startDateTime.plusDays(daysToAdd.toLong())
-    }
-
-    private fun formatDateForDisplay(date: java.time.LocalDate): String {
-        val today = java.time.LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(Locale.ENGLISH)
-        return when (date) {
-            today -> "Сегодня"
-            today.plusDays(1) -> "Завтра"
-            today.plusDays(2) -> "Послезавтра"
-            else -> date.format(formatter)
-        }
     }
 
     companion object {

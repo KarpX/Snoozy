@@ -16,4 +16,8 @@ interface AlarmRepository {
     suspend fun deleteAlarm(alarmId: Int)
 
     suspend fun syncRemoteAlarms()
+
+    suspend fun updateOversleptStatus(alarmId: Int, isOverslept: Boolean)
+
+    suspend fun updateAlarmAfterRing(alarmId: Int)
 }

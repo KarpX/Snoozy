@@ -10,7 +10,6 @@ import com.wem.snoozy.data.remote.dto.MemberDto
 import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.GroupItem
 import com.wem.snoozy.domain.entity.Member
-import com.wem.snoozy.presentation.utils.timeToMilli
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -19,7 +18,7 @@ fun AlarmItemModel.toAlarmItem() = AlarmItem(
     this.ringDay,
     this.ringHours,
     this.timeToBed,
-    this.checked,
+    this.enabled,
     this.repeatDays,
     this.remoteId,
     this.isOverslept
@@ -32,7 +31,7 @@ fun AlarmItem.toAlarmItemModel() = AlarmItemModel(
     this.ringHours,
     timeToMilli(this.ringHours),
     this.timeToBed,
-    this.checked,
+    this.enabled,
     this.repeatDays,
     this.remoteId,
     this.isOverslept
@@ -90,3 +89,14 @@ fun MemberDto.toMember(): Member {
 fun List<GroupItemModel>.toGroupItems() = this.map { it.toGroupItem() }
 
 fun Flow<List<GroupItemModel>>.toGroupItemsFlow() = this.map { it.toGroupItems() }
+
+fun timeToMilli(ringHours: String): Int {
+    return try {
+        val parts = ringHours.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        hour * 60 + minute
+    } catch (e: Exception) {
+        0
+    }
+}

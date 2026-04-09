@@ -5,7 +5,7 @@ data class AlarmItem(
     val ringDay: String,
     val ringHours: String,
     val timeToBed: String,
-    val checked: Boolean,
+    val enabled: Boolean,
     val repeatDays: String,
     val remoteId: Long? = null,
     val isOverslept: Boolean = false

@@ -54,22 +54,22 @@ fun AlarmItemCard(
     onEditClick: (AlarmItem) -> Unit = {}
 ) {
 
-    val checked = alarmItem.checked
+    val enabled = alarmItem.enabled
 
     val cardColor by animateColorAsState(
-        targetValue = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+        targetValue = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
         animationSpec = tween(300),
         label = "card_color"
     )
 
     val textScale by animateFloatAsState(
-        targetValue = if (checked) 1.05f else 1f,
+        targetValue = if (enabled) 1.05f else 1f,
         animationSpec = tween(800, easing = LinearOutSlowInEasing),
         label = "text_scale"
     )
 
     val cardType =
-        if (checked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiary.copy(0.6f)
+        if (enabled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiary.copy(0.6f)
 
     Card(
         modifier = modifier
@@ -79,7 +79,7 @@ fun AlarmItemCard(
             }
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .then(
-                if (checked) {
+                if (enabled) {
                     Modifier.shadow(5.dp, RoundedCornerShape(20))
                 } else {
                     Modifier
@@ -141,12 +141,12 @@ fun AlarmItemCard(
                     text = alarmItem.ringHours,
                     fontSize = 60.sp,
                     fontFamily = myTypeFamily,
-                    fontWeight = if (checked) FontWeight(900) else FontWeight(600),
+                    fontWeight = if (enabled) FontWeight(900) else FontWeight(600),
                     color = cardType,
                     modifier = Modifier.scale(textScale)
                 )
                 Switch(
-                    checked = checked,
+                    checked = enabled,
                     onCheckedChange = {
                         onToggle()
                     },
@@ -173,6 +173,6 @@ fun AlarmItemCard(
 @Composable
 fun AlarmItemCardPreview() {
     SnoozyTheme(darkTheme = false) {
-        AlarmItemCard(alarmItem = AlarmItem(0, "Monday", "7:00", "22:00", checked = false, "", isOverslept = true))
+        AlarmItemCard(alarmItem = AlarmItem(0, "Monday", "7:00", "22:00", enabled = false, "", isOverslept = true))
     }
 }
