@@ -99,7 +99,12 @@ fun GroupsScreen(
                             }
                         )
                         if (isExpanded) {
-                            GroupExpandedDetails(group)
+                            GroupExpandedDetails(
+                                group = group,
+                                onTriggerAlarm = { alarmId ->
+                                    mainViewModel.processCommand(MainCommand.TriggerAlarm(alarmId, "Вставай, опоздаешь!"))
+                                }
+                            )
                         }
                     }
                 }
@@ -120,7 +125,10 @@ fun GroupsScreen(
 }
 
 @Composable
-private fun GroupExpandedDetails(group: GroupItem) {
+private fun GroupExpandedDetails(
+    group: GroupItem,
+    onTriggerAlarm: (Long) -> Unit
+) {
     Log.d("Group", group.toString())
     Column(
         modifier = Modifier
@@ -135,7 +143,8 @@ private fun GroupExpandedDetails(group: GroupItem) {
     ) {
         MissedAlarmsSection(
             members = group.members,
-            onSettingsClick = {}
+            onSettingsClick = {},
+            onTriggerAlarm = onTriggerAlarm
         )
         UpcomingAlarmsSection(
             members = group.members
@@ -146,7 +155,8 @@ private fun GroupExpandedDetails(group: GroupItem) {
 @Composable
 private fun MissedAlarmsSection(
     members: List<Member>,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onTriggerAlarm: (Long) -> Unit
 ) {
     val missedMembers = members.filter { it.missedAlarm != null }
 
@@ -200,7 +210,10 @@ private fun MissedAlarmsSection(
                     MissedAlarmItem(
                         name = member.username,
                         time = member.missedAlarm?.ringHours ?: "",
-                        avatarLink = member.avatarLink
+                        avatarLink = member.avatarLink,
+                        onTriggerClick = {
+                            member.missedAlarm?.remoteId?.let { onTriggerAlarm(it) }
+                        }
                     )
                 }
             }

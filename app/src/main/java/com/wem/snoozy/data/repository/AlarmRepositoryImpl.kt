@@ -4,10 +4,12 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.wem.snoozy.data.alarm.AlarmScheduler
+import com.wem.snoozy.data.dto.AlarmActionDto
 import com.wem.snoozy.data.dto.AlarmDto
 import com.wem.snoozy.data.dto.CreateAlarmRequest
 import com.wem.snoozy.data.dto.UpdateAlarmRequest
 import com.wem.snoozy.data.dto.GrantPermissionRequest
+import com.wem.snoozy.data.dto.TriggerRequest
 import com.wem.snoozy.data.local.AlarmItemModel
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.mapper.toAlarmItem
@@ -233,6 +235,30 @@ class AlarmRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e("AlarmRepo", "Failed to grant permission to user $targetUserId", e)
             false
+        }
+    }
+
+    override suspend fun triggerAlarm(alarmId: Long, messageText: String?): Boolean {
+        return try {
+            val response = apiService.triggerAlarm(alarmId, TriggerRequest(messageText))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.e("AlarmRepo", "Failed to trigger alarm $alarmId", e)
+            false
+        }
+    }
+
+    override suspend fun getIncomingActions(): List<AlarmActionDto> {
+        return try {
+            val response = apiService.getIncomingActions()
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("AlarmRepo", "Failed to fetch incoming actions", e)
+            emptyList()
         }
     }
 

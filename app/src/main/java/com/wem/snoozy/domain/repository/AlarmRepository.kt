@@ -22,4 +22,8 @@ interface AlarmRepository {
     suspend fun updateAlarmAfterRing(alarmId: Int)
 
     suspend fun grantPermission(targetUserId: Long, permissionType: String): Boolean
+
+    suspend fun triggerAlarm(alarmId: Long, messageText: String?): Boolean
+
+    suspend fun getIncomingActions(): List<com.wem.snoozy.data.dto.AlarmActionDto>
 }

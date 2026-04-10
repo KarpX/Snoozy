@@ -40,7 +40,8 @@ import com.wem.snoozy.ui.theme.SnoozyTheme
 fun MissedAlarmItem(
     name: String,
     time: String,
-    avatarLink: String? = null
+    avatarLink: String? = null,
+    onTriggerClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -104,7 +105,7 @@ fun MissedAlarmItem(
                     .clip(RoundedCornerShape(50))
                     .background(color = MaterialTheme.colorScheme.onBackground)
                     .clickable {
-                        // TODO call to friend
+                        onTriggerClick()
                     },
                 contentAlignment = Alignment.Center
             ) {
