@@ -109,7 +109,7 @@ fun AlarmDto.toAlarmItem(): AlarmItem {
         enabled = this.enabled,
         repeatDays = this.repeatDays.joinToString(", "),
         remoteId = this.id,
-        isOverslept = this.isOverslept
+        isOverslept = this.overslept
     )
 }
 

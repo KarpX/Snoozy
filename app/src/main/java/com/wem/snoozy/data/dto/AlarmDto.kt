@@ -9,7 +9,7 @@ data class AlarmDto(
     val repeatDays: List<String>,
     val soundName: String?,
     val difficultyLevel: Int?,
-    val isOverslept: Boolean,
+    val overslept: Boolean,
     val createdAt: String?,
     val updatedAt: String?
 )

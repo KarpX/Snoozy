@@ -305,7 +305,7 @@ class AlarmRepositoryImpl @Inject constructor(
             enabled = this.enabled,
             repeatDays = this.repeatDays.toLocalRepeatDays(),
             remoteId = this.id,
-            isOverslept = this.isOverslept
+            isOverslept = this.overslept
         )
     }
 

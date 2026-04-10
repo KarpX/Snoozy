@@ -2,7 +2,6 @@ package com.wem.snoozy.data.repository
 
 import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.mapper.toAlarmItem
 import com.wem.snoozy.data.mapper.toGroupItem
@@ -18,6 +17,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.MultipartBody
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 class GroupsRepositoryImpl @Inject constructor(
@@ -37,22 +37,42 @@ class GroupsRepositoryImpl @Inject constructor(
                         val enrichedMembers = group.members.map { member ->
                             async {
                                 try {
-                                    val alarmsResponse = apiService.getUserAlarms(member.id.toLong())
-                                    val nearestAlarm = if (alarmsResponse.isSuccessful) {
-                                        alarmsResponse.body()
-                                            ?.filter { it.enabled }
-                                            ?.minByOrNull { it.alarmTime }
-                                            ?.let { 
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                    it.toAlarmItem()
-                                                } else {
-                                                    null // Fallback for older versions if needed
-                                                }
+                                    val alarmsResponse =
+                                        apiService.getUserAlarms(member.id.toLong())
+                                    if (alarmsResponse.isSuccessful) {
+                                        val alarms = alarmsResponse.body() ?: emptyList()
+
+                                        Log.d("GroupsRepo", alarms.toString())
+
+                                        // 1. Ищем последний пропущенный будильник (overslept)
+                                        val missedAlarm = alarms
+                                            .filter { it.overslept }
+                                            .maxByOrNull { it.alarmTime }
+                                            ?.let {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) it.toAlarmItem() else null
                                             }
-                                    } else null
-                                    member.copy(upcomingAlarm = nearestAlarm)
+
+                                        // 2. Ищем ближайший активный будущий будильник
+                                        val now = LocalDateTime.now().toString()
+                                        val upcomingAlarm = alarms
+                                            .filter { it.enabled && !it.overslept }
+                                            .filter { it.alarmTime >= now }
+                                            .minByOrNull { it.alarmTime }
+                                            ?.toAlarmItem()
+
+                                        member.copy(
+                                            upcomingAlarm = upcomingAlarm,
+                                            missedAlarm = missedAlarm
+                                        )
+                                    } else {
+                                        member
+                                    }
                                 } catch (e: Exception) {
-                                    Log.e("GroupsRepo", "Error fetching alarms for member ${member.id}", e)
+                                    Log.e(
+                                        "GroupsRepo",
+                                        "Error fetching alarms for member ${member.id}",
+                                        e
+                                    )
                                     member
                                 }
                             }
@@ -60,10 +80,9 @@ class GroupsRepositoryImpl @Inject constructor(
                         group.copy(members = enrichedMembers)
                     }
                 }
-                
+
                 emit(enrichedGroups)
-                
-                // Опционально: сохраняем в БД для кеша (но БД не поддерживает members с алармами сейчас)
+
                 enrichedGroups.forEach { dao.addGroup(it.toGroupItemModel()) }
             } else {
                 Log.e("GroupsRepo", "API error: ${response.code()}, falling back to DB")
@@ -76,12 +95,11 @@ class GroupsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncGroups() {
-        // Метод остается для принудительного обновления, если нужно
         try {
             val response = apiService.getGroups()
             if (response.isSuccessful) {
-                response.body()?.forEach { 
-                    dao.addGroup(it.toGroupItem().toGroupItemModel()) 
+                response.body()?.forEach {
+                    dao.addGroup(it.toGroupItem().toGroupItemModel())
                 }
             }
         } catch (e: Exception) {
@@ -133,7 +151,9 @@ class GroupsRepositoryImpl @Inject constructor(
             val response = apiService.getUserAlarms(userId.toLong())
             if (response.isSuccessful) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    response.body()?.map { it.toAlarmItem() } ?: emptyList()
+                    response.body()
+                        ?.filter { it.enabled }
+                        ?.map { it.toAlarmItem() } ?: emptyList()
                 } else {
                     emptyList()
                 }

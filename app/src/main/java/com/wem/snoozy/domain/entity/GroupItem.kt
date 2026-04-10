@@ -14,5 +14,6 @@ data class Member(
     val id: Int,
     val username: String,
     val avatarLink: String?,
-    val upcomingAlarm: AlarmItem? = null
+    val upcomingAlarm: AlarmItem? = null,
+    val missedAlarm: AlarmItem? = null
 )

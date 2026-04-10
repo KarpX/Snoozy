@@ -148,7 +148,7 @@ private fun MissedAlarmsSection(
     members: List<Member>,
     onSettingsClick: () -> Unit
 ) {
-    val missedMembers = members.filter { it.upcomingAlarm?.isOverslept == true }
+    val missedMembers = members.filter { it.missedAlarm != null }
 
     Column(
         modifier = Modifier
@@ -199,7 +199,7 @@ private fun MissedAlarmsSection(
                 missedMembers.forEach { member ->
                     MissedAlarmItem(
                         name = member.username,
-                        time = member.upcomingAlarm?.ringHours ?: "",
+                        time = member.missedAlarm?.ringHours ?: "",
                         avatarLink = member.avatarLink
                     )
                 }
