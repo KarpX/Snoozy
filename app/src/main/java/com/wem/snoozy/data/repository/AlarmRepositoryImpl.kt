@@ -7,6 +7,7 @@ import com.wem.snoozy.data.alarm.AlarmScheduler
 import com.wem.snoozy.data.dto.AlarmDto
 import com.wem.snoozy.data.dto.CreateAlarmRequest
 import com.wem.snoozy.data.dto.UpdateAlarmRequest
+import com.wem.snoozy.data.dto.GrantPermissionRequest
 import com.wem.snoozy.data.local.AlarmItemModel
 import com.wem.snoozy.data.local.Dao
 import com.wem.snoozy.data.mapper.toAlarmItem
@@ -222,6 +223,16 @@ class AlarmRepositoryImpl @Inject constructor(
             }
             
             alarmScheduler.schedule(nextAlarmItem)
+        }
+    }
+
+    override suspend fun grantPermission(targetUserId: Long, permissionType: String): Boolean {
+        return try {
+            val response = apiService.grantPermission(GrantPermissionRequest(targetUserId, permissionType))
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.e("AlarmRepo", "Failed to grant permission to user $targetUserId", e)
+            false
         }
     }
 

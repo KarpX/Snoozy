@@ -2,7 +2,9 @@ package com.wem.snoozy.data.repository
 
 import android.os.Build
 import android.util.Log
+import com.wem.snoozy.data.dto.GrantPermissionRequest
 import com.wem.snoozy.data.local.Dao
+import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.data.mapper.toAlarmItem
 import com.wem.snoozy.data.mapper.toGroupItem
 import com.wem.snoozy.data.mapper.toGroupItemModel
@@ -15,6 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import okhttp3.MultipartBody
 import java.time.LocalDateTime
@@ -22,7 +25,8 @@ import javax.inject.Inject
 
 class GroupsRepositoryImpl @Inject constructor(
     private val apiService: ApiService,
-    private val dao: Dao
+    private val dao: Dao,
+    private val userPreferencesManager: UserPreferencesManager
 ) : GroupRepository {
 
     override fun getGroups(): Flow<List<GroupItem>> = flow {
@@ -111,8 +115,27 @@ class GroupsRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.createGroup(CreateGroupRequest(name, memberIds))
             if (response.isSuccessful) {
-                val group = response.body()?.toGroupItem()
+                val groupResponse = response.body()
+                val group = groupResponse?.toGroupItem()
                 group?.let { dao.addGroup(it.toGroupItemModel()) }
+                
+                // Автоматически выдаем права всем участникам группы (кроме себя)
+                val currentUserId = userPreferencesManager.userIdFlow.first()
+                groupResponse?.members?.forEach { member ->
+                    if (member.id != currentUserId) {
+                        try {
+                            apiService.grantPermission(
+                                GrantPermissionRequest(
+                                    targetUserId = member.id.toLong(),
+                                    permissionType = "TRIGGER"
+                                )
+                            )
+                        } catch (e: Exception) {
+                            Log.e("GroupsRepo", "Failed to grant permission to user ${member.id}", e)
+                        }
+                    }
+                }
+
                 group
             } else null
         } catch (e: Exception) {

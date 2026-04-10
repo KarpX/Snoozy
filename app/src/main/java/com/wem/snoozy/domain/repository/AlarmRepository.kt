@@ -20,4 +20,6 @@ interface AlarmRepository {
     suspend fun updateOversleptStatus(alarmId: Int, isOverslept: Boolean)
 
     suspend fun updateAlarmAfterRing(alarmId: Int)
+
+    suspend fun grantPermission(targetUserId: Long, permissionType: String): Boolean
 }
