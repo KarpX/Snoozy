@@ -148,6 +148,8 @@ private fun MissedAlarmsSection(
     members: List<Member>,
     onSettingsClick: () -> Unit
 ) {
+    val missedMembers = members.filter { it.upcomingAlarm?.isOverslept == true }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,7 +187,7 @@ private fun MissedAlarmsSection(
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (members.isEmpty()) {
+            if (missedMembers.isEmpty()) {
                 Text(
                     text = "Нет пропущенных",
                     color = MaterialTheme.colorScheme.secondaryFixed.copy(alpha = 0.65f),
@@ -194,11 +196,10 @@ private fun MissedAlarmsSection(
                     textAlign = TextAlign.Center
                 )
             } else {
-                // В качестве примера отображаем первых 2 участников как "пропустивших"
-                members.take(2).forEach { member ->
+                missedMembers.forEach { member ->
                     MissedAlarmItem(
                         name = member.username,
-                        time = "07:30",
+                        time = member.upcomingAlarm?.ringHours ?: "",
                         avatarLink = member.avatarLink
                     )
                 }
@@ -231,7 +232,9 @@ private fun UpcomingAlarmsSection(members: List<Member>) {
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (members.isEmpty()) {
+            val membersWithAlarms = members.filter { it.upcomingAlarm != null }
+            
+            if (membersWithAlarms.isEmpty()) {
                 Text(
                     text = "Нет ближайших",
                     color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f),
@@ -240,10 +243,10 @@ private fun UpcomingAlarmsSection(members: List<Member>) {
                     textAlign = TextAlign.Center
                 )
             } else {
-                members.forEach { member ->
+                membersWithAlarms.forEach { member ->
                     UpcomingAlarmItem(
                         name = member.username,
-                        time = "09:15",
+                        time = member.upcomingAlarm?.ringHours ?: "--:--",
                         avatarLink = member.avatarLink
                     )
                 }

@@ -3,6 +3,7 @@ package com.wem.snoozy.data.mapper
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.wem.snoozy.data.dto.AlarmDto
 import com.wem.snoozy.data.local.AlarmItemModel
 import com.wem.snoozy.data.local.GroupItemModel
 import com.wem.snoozy.data.remote.dto.GroupResponse
@@ -12,6 +13,9 @@ import com.wem.snoozy.domain.entity.GroupItem
 import com.wem.snoozy.domain.entity.Member
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 fun AlarmItemModel.toAlarmItem() = AlarmItem(
     this.id,
@@ -83,6 +87,29 @@ fun MemberDto.toMember(): Member {
         id = this.id,
         username = this.username,
         avatarLink = avatarUrl
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun AlarmDto.toAlarmItem(): AlarmItem {
+    val dateTime = try {
+        LocalDateTime.parse(this.alarmTime)
+    } catch (e: Exception) {
+        LocalDateTime.now()
+    }
+    
+    val ringDay = dateTime.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+    val ringHours = dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+    
+    return AlarmItem(
+        id = this.id.toInt(),
+        ringDay = ringDay,
+        ringHours = ringHours,
+        timeToBed = "", // В DTO этого нет
+        enabled = this.enabled,
+        repeatDays = this.repeatDays.joinToString(", "),
+        remoteId = this.id,
+        isOverslept = this.isOverslept
     )
 }
 

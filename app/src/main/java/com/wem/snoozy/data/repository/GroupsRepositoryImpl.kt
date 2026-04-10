@@ -1,15 +1,20 @@
 package com.wem.snoozy.data.repository
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.wem.snoozy.data.local.Dao
+import com.wem.snoozy.data.mapper.toAlarmItem
 import com.wem.snoozy.data.mapper.toGroupItem
 import com.wem.snoozy.data.mapper.toGroupItemModel
-import com.wem.snoozy.data.mapper.toGroupItems
-import com.wem.snoozy.data.mapper.toGroupItemsFlow
 import com.wem.snoozy.data.remote.ApiService
 import com.wem.snoozy.data.remote.dto.CreateGroupRequest
+import com.wem.snoozy.domain.entity.AlarmItem
 import com.wem.snoozy.domain.entity.GroupItem
 import com.wem.snoozy.domain.repository.GroupRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.MultipartBody
@@ -20,20 +25,47 @@ class GroupsRepositoryImpl @Inject constructor(
     private val dao: Dao
 ) : GroupRepository {
 
-    // Теперь получаем группы напрямую из API
     override fun getGroups(): Flow<List<GroupItem>> = flow {
         try {
             val response = apiService.getGroups()
             if (response.isSuccessful) {
                 val remoteGroups = response.body()?.map { it.toGroupItem() } ?: emptyList()
-                Log.d("GroupsRepo", "Fetched ${remoteGroups.size} groups directly from API")
+                Log.d("GroupsRepo", "Fetched ${remoteGroups.size} groups, enriching with alarms...")
+
+                val enrichedGroups = coroutineScope {
+                    remoteGroups.map { group ->
+                        val enrichedMembers = group.members.map { member ->
+                            async {
+                                try {
+                                    val alarmsResponse = apiService.getUserAlarms(member.id.toLong())
+                                    val nearestAlarm = if (alarmsResponse.isSuccessful) {
+                                        alarmsResponse.body()
+                                            ?.filter { it.enabled }
+                                            ?.minByOrNull { it.alarmTime }
+                                            ?.let { 
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    it.toAlarmItem()
+                                                } else {
+                                                    null // Fallback for older versions if needed
+                                                }
+                                            }
+                                    } else null
+                                    member.copy(upcomingAlarm = nearestAlarm)
+                                } catch (e: Exception) {
+                                    Log.e("GroupsRepo", "Error fetching alarms for member ${member.id}", e)
+                                    member
+                                }
+                            }
+                        }.awaitAll()
+                        group.copy(members = enrichedMembers)
+                    }
+                }
                 
-                // Опционально: сохраняем в БД для кеша
-                remoteGroups.forEach { dao.addGroup(it.toGroupItemModel()) }
+                emit(enrichedGroups)
                 
-                emit(remoteGroups)
+                // Опционально: сохраняем в БД для кеша (но БД не поддерживает members с алармами сейчас)
+                enrichedGroups.forEach { dao.addGroup(it.toGroupItemModel()) }
             } else {
-                // Если API упал, пытаемся взять из БД
                 Log.e("GroupsRepo", "API error: ${response.code()}, falling back to DB")
                 emit(dao.getGroupsOnce().map { it.toGroupItem() })
             }
@@ -90,10 +122,27 @@ class GroupsRepositoryImpl @Inject constructor(
 
     override suspend fun deleteGroup(groupId: Int) {
         try {
-            // Здесь в идеале должен быть вызов API для удаления на сервере
             dao.deleteGroup(groupId)
         } catch (e: Exception) {
             dao.deleteGroup(groupId)
+        }
+    }
+
+    override suspend fun getMemberAlarms(userId: Int): List<AlarmItem> {
+        return try {
+            val response = apiService.getUserAlarms(userId.toLong())
+            if (response.isSuccessful) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    response.body()?.map { it.toAlarmItem() } ?: emptyList()
+                } else {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("GroupsRepo", "Error fetching member alarms for user $userId", e)
+            emptyList()
         }
     }
 }

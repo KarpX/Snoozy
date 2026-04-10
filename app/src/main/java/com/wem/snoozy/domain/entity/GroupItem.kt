@@ -13,5 +13,6 @@ data class GroupItem(
 data class Member(
     val id: Int,
     val username: String,
-    val avatarLink: String?
+    val avatarLink: String?,
+    val upcomingAlarm: AlarmItem? = null
 )
