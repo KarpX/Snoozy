@@ -31,6 +31,9 @@ class IncomingAlarmPollingService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isPolling = false
 
+    // Храним ID уже обработанных уведомлений, чтобы не звонить дважды
+    private val processedActionIds = mutableSetOf<Long>()
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -45,16 +48,32 @@ class IncomingAlarmPollingService : Service() {
             while (isActive) {
                 try {
                     val actions = alarmRepository.getIncomingActions()
-                    actions.forEach { action ->
+                    
+                    // Фильтруем только новые действия, которые мы еще не видели
+                    val newActions = actions.filter { action ->
+                        action.id != null && !processedActionIds.contains(action.id)
+                    }
+
+                    newActions.forEach { action ->
                         if (action.actionType == "TRIGGER_NOW" && action.status == "EXECUTED") {
-                            Log.d("PollingService", "Triggering alarm: ${action.alarmId}")
+                            Log.d("PollingService", "New trigger for alarm: ${action.alarmId}")
+                            
+                            // Запоминаем ID, чтобы не обрабатывать его в следующем цикле
+                            action.id?.let { processedActionIds.add(it) }
+                            
                             triggerLocalAlarm(action.alarmId.toInt())
                         }
                     }
+                    
+                    // Чтобы set не рос бесконечно, можно очищать старые ID (опционально)
+                    if (processedActionIds.size > 200) {
+                        val toRemove = processedActionIds.take(100)
+                        processedActionIds.removeAll(toRemove.toSet())
+                    }
+
                 } catch (e: Exception) {
                     Log.e("PollingService", "Error during polling", e)
                 }
-                // Опрос каждые 5 секунд для "почти мгновенного" эффекта
                 delay(5000)
             }
         }
