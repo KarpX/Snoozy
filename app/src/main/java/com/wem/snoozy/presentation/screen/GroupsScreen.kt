@@ -99,7 +99,12 @@ fun GroupsScreen(
                             }
                         )
                         if (isExpanded) {
-                            GroupExpandedDetails(group)
+                            GroupExpandedDetails(
+                                group = group,
+                                onTriggerAlarm = { alarmId ->
+                                    mainViewModel.processCommand(MainCommand.TriggerAlarm(alarmId, "Вставай, опоздаешь!"))
+                                }
+                            )
                         }
                     }
                 }
@@ -120,7 +125,10 @@ fun GroupsScreen(
 }
 
 @Composable
-private fun GroupExpandedDetails(group: GroupItem) {
+private fun GroupExpandedDetails(
+    group: GroupItem,
+    onTriggerAlarm: (Long) -> Unit
+) {
     Log.d("Group", group.toString())
     Column(
         modifier = Modifier
@@ -135,7 +143,8 @@ private fun GroupExpandedDetails(group: GroupItem) {
     ) {
         MissedAlarmsSection(
             members = group.members,
-            onSettingsClick = {}
+            onSettingsClick = {},
+            onTriggerAlarm = onTriggerAlarm
         )
         UpcomingAlarmsSection(
             members = group.members
@@ -146,8 +155,11 @@ private fun GroupExpandedDetails(group: GroupItem) {
 @Composable
 private fun MissedAlarmsSection(
     members: List<Member>,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onTriggerAlarm: (Long) -> Unit
 ) {
+    val missedMembers = members.filter { it.missedAlarm != null }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,7 +197,7 @@ private fun MissedAlarmsSection(
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (members.isEmpty()) {
+            if (missedMembers.isEmpty()) {
                 Text(
                     text = "Нет пропущенных",
                     color = MaterialTheme.colorScheme.secondaryFixed.copy(alpha = 0.65f),
@@ -194,12 +206,14 @@ private fun MissedAlarmsSection(
                     textAlign = TextAlign.Center
                 )
             } else {
-                // В качестве примера отображаем первых 2 участников как "пропустивших"
-                members.take(2).forEach { member ->
+                missedMembers.forEach { member ->
                     MissedAlarmItem(
                         name = member.username,
-                        time = "07:30",
-                        avatarLink = member.avatarLink
+                        time = member.missedAlarm?.ringHours ?: "",
+                        avatarLink = member.avatarLink,
+                        onTriggerClick = {
+                            member.missedAlarm?.remoteId?.let { onTriggerAlarm(it) }
+                        }
                     )
                 }
             }
@@ -231,7 +245,9 @@ private fun UpcomingAlarmsSection(members: List<Member>) {
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (members.isEmpty()) {
+            val membersWithAlarms = members.filter { it.upcomingAlarm != null }
+            
+            if (membersWithAlarms.isEmpty()) {
                 Text(
                     text = "Нет ближайших",
                     color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f),
@@ -240,10 +256,10 @@ private fun UpcomingAlarmsSection(members: List<Member>) {
                     textAlign = TextAlign.Center
                 )
             } else {
-                members.forEach { member ->
+                membersWithAlarms.forEach { member ->
                     UpcomingAlarmItem(
                         name = member.username,
-                        time = "09:15",
+                        time = member.upcomingAlarm?.ringHours ?: "--:--",
                         avatarLink = member.avatarLink
                     )
                 }

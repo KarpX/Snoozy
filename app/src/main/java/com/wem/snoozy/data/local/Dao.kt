@@ -16,17 +16,29 @@ interface Dao {
     @Query("SELECT * FROM alarms WHERE id = :alarmId")
     suspend fun getAlarmById(alarmId: Int): AlarmItemModel?
 
+    @Query("SELECT * FROM alarms WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getAlarmByRemoteId(remoteId: Long): AlarmItemModel?
+
+    @Query("SELECT * FROM alarms WHERE remoteId IS NULL")
+    suspend fun getAlarmsToSync(): List<AlarmItemModel>
+
     @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
     fun getAlarms(): Flow<List<AlarmItemModel>>
 
-    @Query("UPDATE alarms SET checked = :isChecked WHERE id = :alarmId")
-    suspend fun updateCheckedStatus(alarmId: Int, isChecked: Boolean)
+    @Query("SELECT * FROM alarms ORDER BY ringHoursMillis ASC")
+    suspend fun getAlarmsOnce(): List<AlarmItemModel>
+
+    @Query("UPDATE alarms SET enabled = :isEnabled WHERE id = :alarmId")
+    suspend fun updateEnabledStatus(alarmId: Int, isEnabled: Boolean)
 
     @Query("UPDATE alarms SET isOverslept = :isOverslept WHERE id = :alarmId")
     suspend fun updateOversleptStatus(alarmId: Int, isOverslept: Boolean)
 
     @Query("DELETE FROM alarms WHERE id= :alarmId")
     suspend fun deleteAlarm(alarmId: Int)
+
+    @Query("DELETE FROM alarms WHERE remoteId IS NOT NULL")
+    suspend fun clearSyncedAlarms()
 
     // Группы
     @Insert(onConflict = OnConflictStrategy.REPLACE)

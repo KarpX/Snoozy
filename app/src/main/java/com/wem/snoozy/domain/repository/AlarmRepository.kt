@@ -14,4 +14,16 @@ interface AlarmRepository {
     suspend fun toggleAlarmState(alarmItem: AlarmItem)
 
     suspend fun deleteAlarm(alarmId: Int)
+
+    suspend fun syncRemoteAlarms()
+
+    suspend fun updateOversleptStatus(alarmId: Int, isOverslept: Boolean)
+
+    suspend fun updateAlarmAfterRing(alarmId: Int)
+
+    suspend fun grantPermission(targetUserId: Long, permissionType: String): Boolean
+
+    suspend fun triggerAlarm(alarmId: Long, messageText: String?): Boolean
+
+    suspend fun getIncomingActions(): List<com.wem.snoozy.data.dto.AlarmActionDto>
 }

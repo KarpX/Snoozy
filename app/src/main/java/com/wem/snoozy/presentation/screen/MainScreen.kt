@@ -415,7 +415,7 @@ fun BottomSheetContentAdd(
                                     timeToBed = if (selectedCycleId.value != -1) {
                                         currentState.cyclesList.find { it.id == selectedCycleId.value }?.time ?: ""
                                     } else "",
-                                    checked = true,
+                                    enabled = true,
                                     repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() }
                                 )
                             )
@@ -531,8 +531,10 @@ fun BottomSheetContentEdit(
                                     timeToBed = if (selectedCycleId.value != -1) {
                                         currentState.cyclesList.find { it.id == selectedCycleId.value }?.time ?: ""
                                     } else "",
-                                    checked = true,
-                                    repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() }
+                                    enabled = true,
+                                    repeatDays = currentState.daysList.filter { it.checked }.joinToString(",") { it.id.toString() },
+                                    remoteId = alarmItem.remoteId,
+                                    isOverslept = alarmItem.isOverslept
                                 )
                             )
                         )

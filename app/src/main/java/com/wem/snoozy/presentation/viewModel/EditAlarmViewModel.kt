@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @HiltViewModel(
     assistedFactory = EditAlarmViewModel.Factory::class
@@ -62,7 +63,11 @@ class EditAlarmViewModel @AssistedInject constructor(
             cycleLength.value = userPreferencesManager.cycleLengthFlow.first()
             sleepStartTime.value = userPreferencesManager.sleepStartTimeFlow.first()
             
-            val alarmTime = LocalTime.parse(alarmItem.ringHours)
+            val alarmTime = try {
+                LocalTime.parse(alarmItem.ringHours, DateTimeFormatter.ofPattern("H:mm"))
+            } catch (e: Exception) {
+                LocalTime.now()
+            }
             
             // Парсим дни повтора
             val repeatedDaysIds = alarmItem.repeatDays.split(",")

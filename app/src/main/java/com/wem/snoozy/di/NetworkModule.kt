@@ -1,5 +1,6 @@
 package com.wem.snoozy.di
 
+import com.google.gson.Gson
 import com.wem.snoozy.data.local.UserPreferencesManager
 import com.wem.snoozy.data.remote.ApiService
 import com.wem.snoozy.data.remote.AuthInterceptor
@@ -19,6 +20,10 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val BASE_URL = "http://45.156.22.247:8081/"
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
 
     @Provides
     @Singleton
@@ -46,10 +51,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .client(okHttpClient)
             .build()
     }

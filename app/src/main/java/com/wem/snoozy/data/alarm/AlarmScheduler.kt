@@ -23,7 +23,7 @@ class AlarmScheduler @Inject constructor(
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     fun schedule(alarmItem: AlarmItem) {
-        if (!alarmItem.checked) {
+        if (!alarmItem.enabled) {
             cancelAlarm(alarmItem.id)
             cancelBedtimeNotification(alarmItem.id)
             return
@@ -35,7 +35,7 @@ class AlarmScheduler @Inject constructor(
 
     private fun scheduleAlarm(alarmItem: AlarmItem) {
         try {
-            val alarmTime = LocalTime.parse(alarmItem.ringHours, DateTimeFormatter.ofPattern("HH:mm"))
+            val alarmTime = LocalTime.parse(alarmItem.ringHours, DateTimeFormatter.ofPattern("H:mm"))
             val ringDate = alarmItem.ringDay.formatStringToDate()
             
             var scheduleTime = LocalDateTime.of(ringDate, alarmTime)
@@ -81,7 +81,7 @@ class AlarmScheduler @Inject constructor(
     }
 
     fun scheduleBedtimeNotification(alarmItem: AlarmItem) {
-        if (alarmItem.timeToBed.isEmpty() || !alarmItem.checked) {
+        if (alarmItem.timeToBed.isEmpty() || !alarmItem.enabled) {
             cancelBedtimeNotification(alarmItem.id)
             return
         }
@@ -99,19 +99,24 @@ class AlarmScheduler @Inject constructor(
             val intent = Intent(context, AlarmReceiver::class.java).apply {
                 putExtra(AlarmReceiver.EXTRA_TYPE, AlarmReceiver.TYPE_BEDTIME)
                 putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmItem.id)
-                putExtra("RING_HOURS", alarmItem.ringHours)
             }
 
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                alarmItem.id + BEDTIME_OFFSET,
+                -alarmItem.id, // Use negative ID to distinguish from alarm
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
             val triggerAt = scheduleTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            setExactAlarm(triggerAt, pendingIntent)
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAt,
+                pendingIntent
+            )
+            
+            Log.d("AlarmScheduler", "Scheduled Bedtime Notification for ${alarmItem.id} at $scheduleTime")
         } catch (e: Exception) {
             Log.e("AlarmScheduler", "Error scheduling bedtime", e)
         }
@@ -175,43 +180,40 @@ class AlarmScheduler @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        
         alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
-        Log.d("AlarmScheduler", "Canceled alarm $alarmId and removed from system")
     }
 
     fun cancelBedtimeNotification(alarmId: Int) {
         val intent = Intent(context, AlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            alarmId + BEDTIME_OFFSET,
+            -alarmId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
     }
 
-    private fun getNextOccurrence(startDateTime: LocalDateTime, repeatDays: String): LocalDateTime {
+    private fun getNextOccurrence(current: LocalDateTime, repeatDays: String): LocalDateTime {
         val days = repeatDays.split(",").mapNotNull { it.trim().toIntOrNull() }.sorted()
-        if (days.isEmpty()) return startDateTime.plusDays(1)
+        if (days.isEmpty()) return current.plusDays(1)
 
-        val currentDayOfWeek = startDateTime.dayOfWeek.value
+        val currentDayOfWeek = current.dayOfWeek.value // 1 (Mon) to 7 (Sun)
+        
+        // Find the next day in the list
         val nextDay = days.firstOrNull { it > currentDayOfWeek } ?: days.first()
-
+            
         val daysToAdd = if (nextDay > currentDayOfWeek) {
             nextDay - currentDayOfWeek
         } else {
             7 - currentDayOfWeek + nextDay
         }
         
-        return startDateTime.plusDays(daysToAdd.toLong())
+        return current.plusDays(daysToAdd.toLong())
     }
 
     companion object {
-        private const val BEDTIME_OFFSET = 10000
-        private const val WAKEUP_CHECK_OFFSET = 20000
-        private const val WAKEUP_EXPIRY_OFFSET = 30000
+        private const val WAKEUP_CHECK_OFFSET = 3000
+        private const val WAKEUP_EXPIRY_OFFSET = 4000
     }
 }
